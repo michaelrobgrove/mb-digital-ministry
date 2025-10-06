@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coming Soon | Maryland Baptist Digital Ministry</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #005a9c; /* A respectful blue */
+            font-size: 2rem;
+        }
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #333;
+        }
+        .verse-generator {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        #verse-display {
+            font-style: italic;
+            color: #555;
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+        }
+        button {
+            background-color: #005a9c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #003d6b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>A New Chapter is on the Horizon.</h1>
+        <p>The <span class="highlight">Maryland Baptist Digital Ministry</span> is preparing to launch a new online resource for community, study, and daily inspiration.</p>
+        <p><strong>Launching in late October 2025.</strong></p>
+
+        <div class="verse-generator">
+            <p>While you wait, here is a word of encouragement:</p>
+            <div id="verse-display">"Trust in the LORD with all thine heart; and lean not unto thine own understanding."<br>- Proverbs 3:5</div>
+            <button onclick="generateVerse()">Get Another Verse</button>
+        </div>
+    </div>
+
+    <script>
+        const verses = [
+            { text: "I can do all things through Christ which strengtheneth me.", reference: "Philippians 4:13" },
+            { text: "The LORD is my shepherd; I shall not want.", reference: "Psalm 23:1" },
+            { text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.", reference: "John 3:16" },
+            { text: "Be still, and know that I am God.", reference: "Psalm 46:10" },
+            { text: "This is the day which the LORD hath made; we will rejoice and be glad in it.", reference: "Psalm 118:24" },
+            { text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.", reference: "Jeremiah 29:11" }
+        ];
+
+        function generateVerse() {
+            const verseDisplay = document.getElementById('verse-display');
+            const randomIndex = Math.floor(Math.random() * verses.length);
+            const randomVerse = verses[randomIndex];
+            
+            verseDisplay.innerHTML = `"${randomVerse.text}"<br>- ${randomVerse.reference}`;
+        }
+    </script>
+
+</body>
+</html>
