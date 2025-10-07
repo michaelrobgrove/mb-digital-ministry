@@ -53,7 +53,7 @@
                 </div>
                 <div id="sermon-content" class="hidden">
                     <h3 id="sermon-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6"></h3>
-                    <div class="mb-8 p-4 bg-gray-100 rounded-lg border sticky top-4 z-10">
+                    <div id="audio-player-container" class="hidden mb-8 p-4 bg-gray-100 rounded-lg border sticky top-4 z-10">
                         <audio id="sermon-audio-player" controls class="w-full"></audio>
                     </div>
                     <div id="sermon-text" class="prose max-w-none"></div>
@@ -77,14 +77,12 @@
     </footer>
 
     <script>
-        // --- MOBILE MENU ---
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
-        // --- SERMON ARCHIVE LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const loadingEl = document.getElementById('loading-sermon');
             const sermonContentEl = document.getElementById('sermon-content');
@@ -92,22 +90,28 @@
             
             let allSermons = [];
 
-            // Function to display a sermon in the featured player
             function displaySermon(sermon) {
                 const titleEl = document.getElementById('sermon-title');
                 const textEl = document.getElementById('sermon-text');
+                const audioPlayerContainer = document.getElementById('audio-player-container');
                 const audioPlayer = document.getElementById('sermon-audio-player');
 
                 titleEl.textContent = sermon.title;
                 textEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
-                audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
+                
+                // Only show the player if audioData exists
+                if (sermon.audioData) {
+                    audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
+                    audioPlayerContainer.classList.remove('hidden');
+                } else {
+                    audioPlayerContainer.classList.add('hidden');
+                }
                 
                 sermonContentEl.classList.remove('hidden');
                 loadingEl.classList.add('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // Function to create an archive card
             function createArchiveCard(sermon) {
                 const card = document.createElement('div');
                 card.className = 'bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer';
@@ -135,12 +139,10 @@
                 allSermons = await response.json();
                 
                 if (allSermons.length > 0) {
-                    // Display the most recent sermon
                     displaySermon(allSermons[0]);
 
-                    // Populate the archive with the rest
                     const archivedSermons = allSermons.slice(1);
-                    archiveGridEl.innerHTML = ''; // Clear any loading text
+                    archiveGridEl.innerHTML = '';
                     if(archivedSermons.length > 0) {
                         archivedSermons.forEach(sermon => {
                             const card = createArchiveCard(sermon);
