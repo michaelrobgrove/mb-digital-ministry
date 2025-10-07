@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Sermon - Maryland Baptist Digital Ministry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+    <!-- Icon Library for Audio Controls -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header & Hero Section -->
+    <header class="hero-gradient text-white relative">
+        <!-- Mobile Menu Button -->
+        <div class="absolute top-0 right-0 p-6 z-20">
+            <button id="mobile-menu-btn" class="md:hidden text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+            <!-- Desktop Navigation -->
+            <nav class="header-nav pt-4 pb-10">
+                <a href="/">Home</a>
+                <a href="/pastor-aiden.html">Ask Pastor AIden</a>
+                <a href="/devotional.html">Daily Devotional</a>
+                <a href="/prayer.html">Prayer Requests</a>
+                <a href="/sermon.html" class="active">Weekly Sermon</a>
+                <a href="/about.html">About</a>
+                <a href="/giving.html">Give</a>
+            </nav>
+
+            <!-- Logo -->
+            <div class="mb-8">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert">
+                </a>
+            </div>
+            
+            <!-- Hero Content -->
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">This Week's Sermon</h1>
+            <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans" id="sermon-topic">Loading Sermon Topic...</p>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Panel (Same as other pages) -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
+        <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
+            <a href="/" class="hover:text-accent-gold">Home</a>
+            <a href="/pastor-aiden.html" class="hover:text-accent-gold">Ask Pastor AIden</a>
+            <a href="/devotional.html" class="hover:text-accent-gold">Daily Devotional</a>
+            <a href="/prayer.html" class="hover:text-accent-gold">Prayer Requests</a>
+            <a href="/sermon.html" class="hover:text-accent-gold">Weekly Sermon</a>
+            <a href="/about.html" class="hover:text-accent-gold">About</a>
+            <a href="/giving.html" class="hover:text-accent-gold">Give</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <article id="sermon-container" class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+            
+            <!-- Loading State -->
+            <div id="loading-sermon" class="text-center font-sans">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-blue mb-4"></div>
+                <p class="text-gray-500 text-lg">Pastor AIden is preparing this week's sermon...</p>
+            </div>
+
+            <!-- Sermon Content (will be populated by JS) -->
+            <div id="sermon-content" class="hidden">
+                <h2 id="sermon-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6"></h2>
+                
+                <!-- Audio Player -->
+                <div id="audio-player" class="mb-8 p-4 bg-gray-100 rounded-lg flex items-center gap-4 border sticky top-4 z-10">
+                    <button id="play-pause-btn" class="w-12 h-12 bg-primary-blue text-white rounded-full flex items-center justify-center text-xl hover:bg-blue-900 transition-colors">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <div class="flex-grow">
+                        <p class="font-bold text-gray-700">Listen to Sermon</p>
+                        <p id="audio-status" class="text-sm text-gray-500">Press play to begin</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="voice-select" class="text-sm font-medium">Voice:</label>
+                        <select id="voice-select" class="rounded-md border-gray-300 shadow-sm focus:border-primary-blue focus:ring-primary-blue"></select>
+                    </div>
+                </div>
+
+                <div id="sermon-text" class="prose max-w-none">
+                    <!-- Sermon text will be inserted here -->
+                </div>
+
+                <!-- Monetization Footer -->
+                <div class="mt-12 pt-8 border-t text-center font-sans">
+                    <p class="text-gray-600 mb-2">Enjoying the sermon? Deepen your study with a great Bible.</p>
+                    <a href="https://amzn.to/3Wd4Cpf" target="_blank" rel="noopener" class="text-primary-blue font-semibold hover:underline">
+                        Check out this KJV Study Bible on Amazon &rarr;
+                    </a>
+                    <p class="text-xs text-gray-400 mt-1">(As an Amazon Associate, we earn from qualifying purchases.)</p>
+                </div>
+
+            </div>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 font-sans">
+        <!-- Your standard footer HTML here -->
+    </footer>
+
+    <script>
+        // --- MOBILE MENU ---
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
+        mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+
+        // --- SERMON & TTS LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingEl = document.getElementById('loading-sermon');
+            const contentEl = document.getElementById('sermon-content');
+            const sermonTopicEl = document.getElementById('sermon-topic');
+            const sermonTitleEl = document.getElementById('sermon-title');
+            const sermonTextEl = document.getElementById('sermon-text');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const audioStatusEl = document.getElementById('audio-status');
+            const voiceSelect = document.getElementById('voice-select');
+
+            const synth = window.speechSynthesis;
+            let utterance = null;
+            let voices = [];
+
+            // Fetch Sermon Text from Backend
+            async function fetchSermon() {
+                try {
+                    const response = await fetch('/api/sermon');
+                    if (!response.ok) throw new Error('Failed to fetch sermon');
+                    
+                    const sermon = await response.json();
+                    
+                    sermonTopicEl.textContent = sermon.topic;
+                    sermonTitleEl.textContent = sermon.title;
+                    // Use a simple replace for paragraphs
+                    sermonTextEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
+
+                    loadingEl.classList.add('hidden');
+                    contentEl.classList.remove('hidden');
+
+                    // Prepare the utterance for TTS
+                    utterance = new SpeechSynthesisUtterance(sermon.text);
+                    utterance.onend = () => {
+                        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        audioStatusEl.textContent = "Sermon finished. Click to play again.";
+                    };
+                    utterance.onpause = () => {
+                        audioStatusEl.textContent = "Paused";
+                    };
+                    utterance.onresume = () => {
+                        audioStatusEl.textContent = "Playing...";
+                    };
+
+                } catch (error) {
+                    console.error('Error fetching sermon:', error);
+                    sermonTopicEl.textContent = 'Error';
+                    loadingEl.innerHTML = '<p class="text-red-600">Could not load the sermon. Please try again later.</p>';
+                }
+            }
+
+            // Populate Voice Options for TTS
+            function populateVoiceList() {
+                voices = synth.getVoices().filter(voice => voice.lang.startsWith('en'));
+                voiceSelect.innerHTML = '';
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    option.setAttribute('data-lang', voice.lang);
+                    option.setAttribute('data-name', voice.name);
+                    voiceSelect.appendChild(option);
+                });
+            }
+
+            // Event Listeners
+            playPauseBtn.addEventListener('click', () => {
+                if (!utterance) return;
+                if (synth.paused) {
+                    synth.resume();
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                } else if (synth.speaking) {
+                    synth.pause();
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                } else {
+                    utterance.voice = voices.find(voice => voice.name === voiceSelect.selectedOptions[0].getAttribute('data-name'));
+                    synth.speak(utterance);
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    audioStatusEl.textContent = "Playing...";
+                }
+            });
+            
+            voiceSelect.addEventListener('change', () => {
+                const wasSpeaking = synth.speaking;
+                synth.cancel(); // Stop current speech to change voice
+                if(wasSpeaking){
+                    utterance.voice = voices.find(voice => voice.name === voiceSelect.selectedOptions[0].getAttribute('data-name'));
+                    synth.speak(utterance);
+                }
+            });
+
+            // Initial Load
+            populateVoiceList();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoiceList;
+            }
+            fetchSermon();
+        });
+    </script>
+</body>
+</html>
