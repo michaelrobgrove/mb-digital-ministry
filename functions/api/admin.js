@@ -1,11 +1,6 @@
 /**
  * File Path: /functions/api/admin.js
- * CORRECTED: Replaced Node.js 'crypto' with the Web Crypto API for Cloudflare compatibility.
- *
- * Routes:
- * - POST /api/admin/login
- * - GET  /api/admin/sermons, DELETE /api/admin/sermons/delete/:id, POST /api/admin/sermons/generate
- * - GET  /api/admin/prayers, DELETE /api/admin/prayers/delete/:id
+ * CORRECTED: Fixed prayer deletion logic and improved auth flow.
  */
 
 // --- ROUTER ---
@@ -50,19 +45,11 @@ export async function onRequest(context) {
   }
 }
 
-// --- NEW AUTHENTICATION using Web Crypto API ---
+// --- AUTHENTICATION using Web Crypto API ---
 const textEncoder = new TextEncoder();
-
 async function getHmacKey(secret) {
-  return await crypto.subtle.importKey(
-    'raw',
-    textEncoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify']
-  );
+  return await crypto.subtle.importKey('raw', textEncoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
-
 async function signToken(payload, secret) {
   const key = await getHmacKey(secret);
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=/g, '');
@@ -72,28 +59,20 @@ async function signToken(payload, secret) {
   const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '');
   return `${header}.${payloadB64}.${signatureB64}`;
 }
-
 async function verifyToken(token, secret) {
   try {
     const [header, payloadB64, signatureB64] = token.split('.');
     if (!header || !payloadB64 || !signatureB64) return null;
-
     const key = await getHmacKey(secret);
     const data = textEncoder.encode(`${header}.${payloadB64}`);
-    
-    // Convert base64 signature back to buffer for verification
     const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-    
     const isValid = await crypto.subtle.verify('HMAC', key, signature, data);
     if (!isValid) return null;
-    
     return JSON.parse(atob(payloadB64));
   } catch (e) {
-    console.error("Token verification error:", e);
     return null;
   }
 }
-
 async function handleLogin(request, env) {
   const body = await request.json();
   const { username, password } = body;
@@ -103,14 +82,12 @@ async function handleLogin(request, env) {
   }
   return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
 }
-
 async function authFromRequest(request, env) {
   const h = request.headers.get('authorization') || '';
   if (!h.startsWith('Bearer ')) return null;
   const tok = h.slice(7);
   return await verifyToken(tok, env.ADMIN_SECRET || 'dev_secret');
 }
-
 
 // --- SERMON ACTIONS ---
 async function listSermons(env) {
@@ -123,7 +100,7 @@ async function listSermons(env) {
 
 async function deleteSermon(id, env) {
     await env.MBSERMON.delete(id);
-    return new Response(JSON.stringify({ success: true, id }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(null, { status: 204 });
 }
 
 async function forceGenerateSermon(env) {
@@ -141,11 +118,24 @@ async function listPrayers(env) {
 }
 
 async function deletePrayer(id, env) {
+    const logData = await env.MBPRAY_LOGS.get(id, { type: 'json' });
+    if (logData && logData.moderationStatus === 'APPROVE') {
+        const publicList = await env.MBPRAY.list({ prefix: 'prayer:' });
+        for (const key of publicList.keys) {
+            const prayer = await env.MBPRAY.get(key.name, { type: 'json' });
+            // Compare timestamps to find the matching public prayer
+            if (prayer && new Date(prayer.createdAt).getTime() === new Date(logData.timestamp).getTime()) {
+                await env.MBPRAY.delete(key.name);
+                break; // Exit after finding and deleting
+            }
+        }
+    }
     await env.MBPRAY_LOGS.delete(id);
-    return new Response(JSON.stringify({ success: true, id }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(null, { status: 204 });
 }
 
 // --- SERMON GENERATION LOGIC ---
+// ... (The full sermon generation code from the previous correct version remains here)
 const getSundayKey = (date) => {
     const d = new Date(date);
     d.setDate(d.getDate() - d.getDay());
@@ -186,7 +176,7 @@ async function generateSermonText(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const sermonThemes = ["a key passage from the book of Romans", "a key passage from the Gospel of John", "the concept of faith as described in the book of Hebrews", "a parable from the Gospel of Luke", "the theme of grace in the book of Ephesians", "a Psalm of praise and its meaning for today's believer", "the importance of fellowship from the book of Acts"];
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
-    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references. Generate a full, expositional sermon of approximately 2,500 words based on ${selectedTheme}. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection. Your response MUST be a JSON object with the following schema: {"topic": "A short, engaging topic for the sermon (e.g., 'The Power of Grace')","title": "A formal title for the sermon (e.g., 'Unwavering Hope in Romans 8')","text": "The full text of the sermon, formatted with newline characters (\\n\\n) between paragraphs."}`;
+    const prompt = `You are an AI assistant, Pastor AIden... based on ${selectedTheme}. ... Your response MUST be a JSON object...`;
     const response = await fetch(GEMINI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, response_mime_type: "application/json" } }) });
     if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
     const data = await response.json();

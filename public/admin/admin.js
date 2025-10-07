@@ -1,11 +1,16 @@
-// File Path: /public/admin/admin.js
+/**
+ * File Path: /public/admin/admin.js
+ * CORRECTED: Improved authentication flow to handle invalid tokens on page load.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
     const adminPanel = document.getElementById('admin-panel');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    let token = localStorage.getItem('mb_admin_token');
+    // Using a specific key for this site
+    const TOKEN_KEY = 'mb_admin_token';
+    let token = localStorage.getItem(TOKEN_KEY);
 
     // --- API HELPER ---
     async function api(path, opts = {}) {
@@ -16,17 +21,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const response = await fetch('/api/admin' + path, opts);
         if (response.status === 401) {
+            // If unauthorized, always log out.
             logout();
             throw new Error('Unauthorized');
         }
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || 'API Error');
+            const errData = await response.json().catch(() => ({ error: 'An unknown API error occurred.' }));
+            throw new Error(errData.error || 'API Error');
         }
+        // Handle no-content responses for DELETE requests
+        if (response.status === 204) return;
         return response.json();
     }
 
-    // --- AUTHENTICATION ---
+    // --- UI & AUTHENTICATION ---
     function showLogin() {
         loginScreen.classList.remove('hidden');
         adminPanel.classList.add('hidden');
@@ -40,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function logout() {
-        localStorage.removeItem('mb_admin_token');
+        localStorage.removeItem(TOKEN_KEY);
         token = null;
         showLogin();
     }
@@ -54,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password })
             });
             token = data.token;
-            localStorage.setItem('mb_admin_token', token);
+            localStorage.setItem(TOKEN_KEY, token);
             showAdmin();
         } catch (e) {
             alert('Login failed: ' + e.message);
@@ -71,6 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
         sermonsList.innerHTML = 'Loading sermons...';
         try {
             const sermons = await api('/sermons');
+            if (sermons.length === 0) {
+                 sermonsList.innerHTML = '<p>No sermons found in the archive.</p>';
+                 return;
+            }
             sermonsList.innerHTML = sermons.map(s => `
                 <div class="post-item">
                     <strong>${s.title}</strong>
@@ -79,18 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `).join('');
         } catch (e) {
-            sermonsList.innerHTML = `<p class="error">Failed to load sermons: ${e.message}</p>`;
+            // Errors are handled by the api helper, which will trigger logout on 401
         }
     }
     
     generateSermonBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to generate a new sermon? This will replace the current week\'s sermon if it exists.')) return;
+        if (!confirm('Are you sure you want to generate a new sermon? This can take up to a minute and will replace this week\'s scheduled sermon.')) return;
         try {
+            generateSermonBtn.disabled = true;
+            generateSermonBtn.textContent = 'Generating...';
             await api('/sermons/generate', { method: 'POST' });
-            alert('New sermon generation triggered. It will be available on the next page load.');
+            alert('New sermon generation complete. The archive will update.');
             loadSermons();
         } catch (e) {
             alert('Failed to trigger generation: ' + e.message);
+        } finally {
+            generateSermonBtn.disabled = false;
+            generateSermonBtn.textContent = 'Force Generate New Sermon';
         }
     });
 
@@ -99,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this sermon?\nID: ${id}`)) {
                 try {
-                    await api(`/sermons/delete/${encodeURIComponent(id)}`);
+                    await api(`/sermons/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     loadSermons();
                 } catch (err) {
                     alert('Delete failed: ' + err.message);
@@ -115,16 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
         prayersList.innerHTML = 'Loading prayer logs...';
         try {
             const prayers = await api('/prayers');
+            if (prayers.length === 0) {
+                prayersList.innerHTML = '<p>No prayer requests have been logged.</p>';
+                return;
+            }
             prayersList.innerHTML = prayers.map(p => `
                 <div class="post-item ${p.moderationStatus === 'REJECT' ? 'rejected' : ''}">
-                    <p><strong>${p.firstName}</strong> <span class="status ${p.moderationStatus}">${p.moderationStatus}</span></p>
-                    <p>${p.requestText}</p>
+                    <p><strong>${p.firstName || 'Anonymous'}</strong> <span class="status ${p.moderationStatus || 'UNKNOWN'}">${p.moderationStatus || 'N/A'}</span></p>
+                    <p>${p.requestText || ''}</p>
                     <small>${new Date(p.timestamp).toLocaleString()}</small>
                     <button class="delete-prayer" data-id="${p.id}">Delete Log</button>
                 </div>
             `).join('');
         } catch (e) {
-            prayersList.innerHTML = `<p class="error">Failed to load prayers: ${e.message}</p>`;
+            // Errors are handled by the api helper
         }
     }
 
@@ -133,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this prayer log?\nID: ${id}`)) {
                 try {
-                    await api(`/prayers/delete/${encodeURIComponent(id)}`);
+                    await api(`/prayers/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     loadPrayers();
                 } catch (err) {
                     alert('Delete failed: ' + err.message);
@@ -143,10 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INITIAL LOAD ---
-    if (token) {
-        showAdmin();
-    } else {
-        showLogin();
+    async function initialize() {
+        if (!token) {
+            showLogin();
+            return;
+        }
+        // Verify token by trying to load data. If it fails with 401, the API helper will force a logout.
+        try {
+            await listSermons(); // A lightweight check
+            showAdmin();
+        } catch (e) {
+            // The api() helper already called logout(), so the login screen is now visible.
+            console.error("Initial auth check failed, showing login.");
+        }
     }
+
+    initialize();
 });
 
