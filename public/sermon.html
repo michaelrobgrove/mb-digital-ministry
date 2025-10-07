@@ -31,7 +31,8 @@
                 <a href="/"><img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert"></a>
             </div>
             <h1 class="text-4xl md:text-5xl font-bold mb-3">Sermon Archive</h1>
-            <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans" id="sermon-topic">Biblical teaching from the book of Romans.</p>
+            <!-- UPDATED: Generic Subtitle -->
+            <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans" id="sermon-topic">Exploring God's Word, Together.</p>
         </div>
     </header>
 
@@ -77,19 +78,23 @@
     </footer>
 
     <script>
+        // --- MOBILE MENU ---
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
+        // --- SERMON ARCHIVE LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const loadingEl = document.getElementById('loading-sermon');
             const sermonContentEl = document.getElementById('sermon-content');
             const archiveGridEl = document.getElementById('archive-grid');
+            const sermonTopicEl = document.getElementById('sermon-topic');
             
             let allSermons = [];
 
+            // Function to display a sermon in the featured player
             function displaySermon(sermon) {
                 const titleEl = document.getElementById('sermon-title');
                 const textEl = document.getElementById('sermon-text');
@@ -97,9 +102,9 @@
                 const audioPlayer = document.getElementById('sermon-audio-player');
 
                 titleEl.textContent = sermon.title;
+                sermonTopicEl.textContent = sermon.topic; // Update hero topic
                 textEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
                 
-                // Only show the player if audioData exists
                 if (sermon.audioData) {
                     audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
                     audioPlayerContainer.classList.remove('hidden');
@@ -109,7 +114,8 @@
                 
                 sermonContentEl.classList.remove('hidden');
                 loadingEl.classList.add('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Optional: scroll to top when a new sermon is loaded
+                // window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             function createArchiveCard(sermon) {

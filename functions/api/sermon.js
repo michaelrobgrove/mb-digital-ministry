@@ -20,6 +20,7 @@ function getSundayKey(date) {
 
 function getMostRecentSunday845AMET() {
     const now = new Date();
+    // EDT is UTC-4. The offset is in minutes.
     const edtOffset = -4 * 60; 
     const nowInUTC = now.getTime() + (now.getTimezoneOffset() * 60000);
     const nowET = new Date(nowInUTC + (edtOffset * 60000));
@@ -146,7 +147,20 @@ async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
 
 async function generateSermonText(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references. Generate a full, expositional sermon of approximately 2,500 words based on a key passage from the book of Romans. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection. Your response MUST be a JSON object with the following schema: {"topic": "A short, engaging topic for the sermon (e.g., 'The Power of Grace')","title": "A formal title for the sermon (e.g., 'Unwavering Hope in Romans 8')","text": "The full text of the sermon, formatted with newline characters (\\n\\n) between paragraphs."}`;
+    
+    // --- NEW: Dynamic Sermon Themes ---
+    const sermonThemes = [
+        "a key passage from the book of Romans",
+        "a key passage from the Gospel of John",
+        "the concept of faith as described in the book of Hebrews",
+        "a parable from the Gospel of Luke",
+        "the theme of grace in the book of Ephesians",
+        "a Psalm of praise and its meaning for today's believer",
+        "the importance of fellowship from the book of Acts"
+    ];
+    const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
+    
+    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references. Generate a full, expositional sermon of approximately 2,500 words based on ${selectedTheme}. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection. Your response MUST be a JSON object with the following schema: {"topic": "A short, engaging topic for the sermon (e.g., 'The Power of Grace')","title": "A formal title for the sermon (e.g., 'Unwavering Hope in Romans 8')","text": "The full text of the sermon, formatted with newline characters (\\n\\n) between paragraphs."}`;
     
     const response = await fetch(GEMINI_URL, {
         method: 'POST',
@@ -165,14 +179,11 @@ async function generateSermonText(apiKey) {
     let sermonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!sermonText) throw new Error('No valid sermon text returned from Gemini.');
     
-    // --- NEW: Robust JSON parsing ---
     try {
-        // Clean the string: remove markdown backticks and "json" prefix
         sermonText = sermonText.replace(/^```json\n/, '').replace(/\n```$/, '');
         return JSON.parse(sermonText);
     } catch (e) {
         console.error("Failed to parse JSON from Gemini response. Raw text:", sermonText);
-        // Throw a new error to be caught by the calling function
         throw new Error("Malformed JSON received from AI model.");
     }
 }
@@ -180,7 +191,6 @@ async function generateSermonText(apiKey) {
 async function generateAudio(text, apiKey) {
     const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; 
     const ELEVENLABS_URL = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
-
     const textForAudio = text.substring(0, 2500);
 
     const response = await fetch(ELEVENLABS_URL, {
