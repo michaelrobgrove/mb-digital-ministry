@@ -1,9 +1,8 @@
 /**
  * File Path: /functions/api/admin.js
- * CORRECTED: Fixed prayer deletion logic and improved auth flow.
+ * FINAL, MORE ROBUST VERSION: Includes explicit checks for environment variables.
  */
 
-// --- ROUTER ---
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -20,23 +19,11 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
-    if (path === 'sermons' && request.method === 'GET') {
-      return await listSermons(env);
-    }
-    if (path.startsWith('sermons/delete/')) {
-      const id = decodeURIComponent(path.split('/').pop());
-      return await deleteSermon(id, env);
-    }
-    if (path === 'sermons/generate' && request.method === 'POST') {
-      return await forceGenerateSermon(env);
-    }
-    if (path === 'prayers' && request.method === 'GET') {
-      return await listPrayers(env);
-    }
-    if (path.startsWith('prayers/delete/')) {
-      const id = decodeURIComponent(path.split('/').pop());
-      return await deletePrayer(id, env);
-    }
+    if (path === 'sermons' && request.method === 'GET') return await listSermons(env);
+    if (path.startsWith('sermons/delete/')) return await deleteSermon(decodeURIComponent(path.split('/').pop()), env);
+    if (path === 'sermons/generate' && request.method === 'POST') return await forceGenerateSermon(context);
+    if (path === 'prayers' && request.method === 'GET') return await listPrayers(env);
+    if (path.startsWith('prayers/delete/')) return await deletePrayer(decodeURIComponent(path.split('/').pop()), env);
 
     return new Response(JSON.stringify({error: 'Not Found', path: path}), { status: 404 });
   } catch (err) {
@@ -45,10 +32,10 @@ export async function onRequest(context) {
   }
 }
 
-// --- AUTHENTICATION using Web Crypto API ---
+// --- AUTHENTICATION with Environment Variable Checks ---
 const textEncoder = new TextEncoder();
 async function getHmacKey(secret) {
-  return await crypto.subtle.importKey('raw', textEncoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+  return await crypto.subtle.importKey('raw',textEncoder.encode(secret),{ name: 'HMAC', hash: 'SHA-256' },false,['sign', 'verify']);
 }
 async function signToken(payload, secret) {
   const key = await getHmacKey(secret);
@@ -61,6 +48,7 @@ async function signToken(payload, secret) {
 }
 async function verifyToken(token, secret) {
   try {
+    if (!secret) return null;
     const [header, payloadB64, signatureB64] = token.split('.');
     if (!header || !payloadB64 || !signatureB64) return null;
     const key = await getHmacKey(secret);
@@ -69,11 +57,16 @@ async function verifyToken(token, secret) {
     const isValid = await crypto.subtle.verify('HMAC', key, signature, data);
     if (!isValid) return null;
     return JSON.parse(atob(payloadB64));
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
+
 async function handleLogin(request, env) {
+  // --- NEW: Explicitly check for required environment variables ---
+  if (!env.SUPERADMIN_USERNAME || !env.SUPERADMIN_PASSWORD || !env.ADMIN_SECRET) {
+    console.error("CRITICAL: Admin environment variables are not configured in Cloudflare settings.");
+    return new Response(JSON.stringify({ error: 'Server-side environment variables are not configured.' }), { status: 500 });
+  }
+
   const body = await request.json();
   const { username, password } = body;
   if (username === env.SUPERADMIN_USERNAME && password === env.SUPERADMIN_PASSWORD) {
@@ -82,14 +75,17 @@ async function handleLogin(request, env) {
   }
   return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
 }
+
 async function authFromRequest(request, env) {
   const h = request.headers.get('authorization') || '';
   if (!h.startsWith('Bearer ')) return null;
   const tok = h.slice(7);
-  return await verifyToken(tok, env.ADMIN_SECRET || 'dev_secret');
+  return await verifyToken(tok, env.ADMIN_SECRET);
 }
 
-// --- SERMON ACTIONS ---
+// --- SERMON & PRAYER ACTIONS ---
+// (The rest of the file remains the same)
+
 async function listSermons(env) {
     const list = await env.MBSERMON.list({ prefix: 'sermon:' });
     const promises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
@@ -103,12 +99,11 @@ async function deleteSermon(id, env) {
     return new Response(null, { status: 204 });
 }
 
-async function forceGenerateSermon(env) {
-    const sermon = await generateAndCacheSermon(env);
+async function forceGenerateSermon(context) {
+    const sermon = await generateAndCacheSermon(context.env);
     return new Response(JSON.stringify(sermon), { status: 201, headers: { 'Content-Type': 'application/json' } });
 }
 
-// --- PRAYER ACTIONS ---
 async function listPrayers(env) {
     const list = await env.MBPRAY_LOGS.list({ prefix: 'log:', limit: 100 });
     const promises = list.keys.map(key => env.MBPRAY_LOGS.get(key.name, { type: 'json' }).then(data => ({ ...data, id: key.name })));
@@ -123,10 +118,9 @@ async function deletePrayer(id, env) {
         const publicList = await env.MBPRAY.list({ prefix: 'prayer:' });
         for (const key of publicList.keys) {
             const prayer = await env.MBPRAY.get(key.name, { type: 'json' });
-            // Compare timestamps to find the matching public prayer
             if (prayer && new Date(prayer.createdAt).getTime() === new Date(logData.timestamp).getTime()) {
                 await env.MBPRAY.delete(key.name);
-                break; // Exit after finding and deleting
+                break;
             }
         }
     }
@@ -134,8 +128,6 @@ async function deletePrayer(id, env) {
     return new Response(null, { status: 204 });
 }
 
-// --- SERMON GENERATION LOGIC ---
-// ... (The full sermon generation code from the previous correct version remains here)
 const getSundayKey = (date) => {
     const d = new Date(date);
     d.setDate(d.getDate() - d.getDay());
@@ -176,7 +168,7 @@ async function generateSermonText(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const sermonThemes = ["a key passage from the book of Romans", "a key passage from the Gospel of John", "the concept of faith as described in the book of Hebrews", "a parable from the Gospel of Luke", "the theme of grace in the book of Ephesians", "a Psalm of praise and its meaning for today's believer", "the importance of fellowship from the book of Acts"];
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
-    const prompt = `You are an AI assistant, Pastor AIden... based on ${selectedTheme}. ... Your response MUST be a JSON object...`;
+    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website... based on ${selectedTheme}. ... Your response MUST be a JSON object...`;
     const response = await fetch(GEMINI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, response_mime_type: "application/json" } }) });
     if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
     const data = await response.json();
