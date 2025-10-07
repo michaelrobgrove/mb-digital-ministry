@@ -79,7 +79,6 @@ async function handlePostRequest(context) {
 }
 
 async function moderateWithGemini(text, apiKey) {
-    // --- CORRECTED MODEL ENDPOINT ---
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const prompt = `You are a content moderator for a Christian church's public prayer wall. Analyze the following prayer request. Determine if it is spam, contains inappropriate content (profanity, hate speech, violence), or includes sensitive personal identifiable information (like last names, addresses, phone numbers, emails). Respond with only a single word: APPROVE if the request is a genuine, safe-for-public prayer request. Respond with only a single word: REJECT if it violates any of the rules. Prayer Request: "${text}"`;
@@ -98,13 +97,16 @@ async function moderateWithGemini(text, apiKey) {
         }
         const data = await response.json();
         
-        // Add safety check for empty or missing candidates array
-        if (!data.candidates || data.candidates.length === 0) {
-            console.error('Gemini API Error: No candidates returned. The prompt may have been blocked for safety reasons.');
+        // --- FIX: Safely access nested properties to prevent crash ---
+        // Use optional chaining (?.) to avoid errors if parts of the response are missing.
+        const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!resultText) {
+            console.error('Gemini API Error: No valid text content returned. The prompt may have been blocked for safety reasons.', JSON.stringify(data));
             return 'REJECT';
         }
 
-        const result = data.candidates[0].content.parts[0].text.trim().toUpperCase();
+        const result = resultText.trim().toUpperCase();
         return result === 'APPROVE' ? 'APPROVE' : 'REJECT';
     } catch (error) {
         console.error('Error calling Gemini API:', error);
