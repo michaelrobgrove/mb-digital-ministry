@@ -78,26 +78,35 @@ async function handlePostRequest(context) {
     }
 }
 
+/**
+ * NEW: Uses JSON mode for more reliable moderation.
+ */
 async function moderateWithGemini(text, apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
-    const prompt = `You are a content moderator for a Christian church's public prayer wall. Analyze the following prayer request. Determine if it is spam, contains inappropriate content (profanity, hate speech, violence), or includes sensitive personal identifiable information (like last names, addresses, phone numbers, emails). Respond with only a single word: APPROVE if the request is a genuine, safe-for-public prayer request. Respond with only a single word: REJECT if it violates any of the rules. Prayer Request: "${text}"`;
+    // Updated prompt to ask for a JSON response
+    const prompt = `Analyze the following prayer request for a public church prayer wall. Is it a genuine, safe-for-public prayer request? Rules: No spam, no profanity, no hate speech, no violence, and no sensitive personal information (last names, addresses, emails, phone numbers). Respond with JSON that follows this schema: {"decision": "APPROVE" | "REJECT"}. Prayer Request: "${text}"`;
+    
     try {
         const response = await fetch(GEMINI_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                // --- FIX: Increased token limit to 300 as requested ---
-                generationConfig: { temperature: 0, maxOutputTokens: 300 },
+                // Instruct the model to output JSON
+                generationConfig: {
+                    temperature: 0,
+                    response_mime_type: "application/json", 
+                },
             }),
         });
+
         if (!response.ok) {
             console.error('Gemini API Error:', await response.text());
             return 'REJECT';
         }
+
         const data = await response.json();
-        
         const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!resultText) {
@@ -105,10 +114,14 @@ async function moderateWithGemini(text, apiKey) {
             return 'REJECT';
         }
 
-        const result = resultText.trim().toUpperCase();
-        return result === 'APPROVE' ? 'APPROVE' : 'REJECT';
+        // Parse the JSON response from the model
+        const parsedResult = JSON.parse(resultText);
+        const decision = parsedResult.decision?.trim().toUpperCase();
+
+        return decision === 'APPROVE' ? 'APPROVE' : 'REJECT';
+
     } catch (error) {
-        console.error('Error calling Gemini API:', error);
+        console.error('Error calling or parsing Gemini API response:', error);
         return 'REJECT';
     }
 }
