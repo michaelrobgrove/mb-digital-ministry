@@ -18,17 +18,32 @@ function getSundayKey(date) {
     return `sermon:${sunday.toISOString().split('T')[0]}`;
 }
 
+/**
+ * REWRITTEN: More reliable function to get the most recent Sunday 8:45 AM ET release time.
+ * This avoids depending on server-specific locale strings.
+ */
 function getMostRecentSunday845AMET() {
     const now = new Date();
-    const nowET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const dayOfWeek = nowET.getDay();
-    const diff = nowET.getDate() - dayOfWeek;
-    const lastSunday = new Date(nowET.setDate(diff));
-    lastSunday.setHours(8, 45, 0, 0);
-    if (nowET < lastSunday) {
-        lastSunday.setDate(lastSunday.getDate() - 7);
+    // EDT is UTC-4. The offset is in minutes.
+    const edtOffset = -4 * 60; 
+    const nowInUTC = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const nowET = new Date(nowInUTC + (edtOffset * 60000));
+
+    const dayOfWeek = nowET.getDay(); // Sunday is 0
+    let daysToSubtract = dayOfWeek;
+
+    // Get the date of the most recent Sunday
+    const releaseDate = new Date(nowET);
+    releaseDate.setDate(releaseDate.getDate() - daysToSubtract);
+    releaseDate.setHours(8, 45, 0, 0);
+
+    // If the calculated release time is in the future (e.g., it's Sunday at 7am),
+    // then the "current" sermon is still from the *previous* week.
+    if (releaseDate > nowET) {
+        releaseDate.setDate(releaseDate.getDate() - 7);
     }
-    return lastSunday;
+    
+    return releaseDate;
 }
 
 export async function onRequest(context) {
@@ -45,22 +60,38 @@ export async function onRequest(context) {
 async function handleGetRequest(context) {
     try {
         const { env, waitUntil } = context;
-
-        const list = await env.MBSERMON.list({ prefix: 'sermon:' });
-        const sermonPromises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
-        const allSermons = (await Promise.all(sermonPromises)).filter(Boolean);
         
+        console.log("Function invoked. Attempting to fetch sermon list.");
+        const list = await env.MBSERMON.list({ prefix: 'sermon:' });
+        console.log(`Found ${list.keys.length} sermon keys in KV.`);
+
+        // If there are no sermons at all, generate the first one synchronously.
+        if (list.keys.length === 0) {
+            console.log("No sermons exist. Triggering initial synchronous generation.");
+            const firstSermon = await generateAndCacheSermon(env);
+            console.log("Initial sermon generated and cached.");
+            return new Response(JSON.stringify([firstSermon]), {
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        // If sermons exist, fetch them all.
+        const sermonPromises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
+        let allSermons = (await Promise.all(sermonPromises)).filter(Boolean);
         allSermons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+        // Check if the latest sermon is stale.
+        const latestSermon = allSermons[0];
         const releaseTime = getMostRecentSunday845AMET();
-        const currentSermonKey = getSundayKey(releaseTime);
-        const currentSermonExists = allSermons.some(sermon => sermon.id === currentSermonKey);
-        
-        const now = new Date();
-        const nowET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const sermonTimestamp = new Date(latestSermon.createdAt);
 
-        if (!currentSermonExists && nowET >= releaseTime) {
-             waitUntil(generateAndCacheSermon(env, currentSermonKey));
+        console.log(`Latest sermon date: ${sermonTimestamp.toISOString()}, Target release time: ${releaseTime.toISOString()}`);
+
+        if (sermonTimestamp < releaseTime) {
+            console.log("Cache is stale. Starting background regeneration.");
+            waitUntil(generateAndCacheSermon(env));
+        } else {
+            console.log("Serving fresh sermon from cache.");
         }
 
         return new Response(JSON.stringify(allSermons), {
@@ -68,17 +99,23 @@ async function handleGetRequest(context) {
         });
 
     } catch (error) {
-        console.error("Error in sermon function:", error);
+        console.error("Critical error in handleGetRequest:", error);
         return new Response('Failed to load sermons.', { status: 500 });
     }
 }
 
-async function generateAndCacheSermon(env, cacheKey) {
+async function generateAndCacheSermon(env) {
+    const releaseTime = getMostRecentSunday845AMET();
+    const cacheKey = getSundayKey(releaseTime);
+    
+    console.log(`Generating new sermon for key: ${cacheKey}`);
     const newSermon = await generateSermonAndAudio(env.GEMINI_API_KEY, env.ELEVENLABS_API_KEY);
     newSermon.id = cacheKey;
+    
     await env.MBSERMON.put(cacheKey, JSON.stringify(newSermon), {
-        expirationTtl: 5616000, 
+        expirationTtl: 5616000, // ~65 days
     });
+    console.log(`Successfully cached new sermon: ${cacheKey}`);
     return newSermon;
 }
 
@@ -102,22 +139,18 @@ async function handleDeleteRequest(context) {
 }
 
 async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
-    // Step 1: Generate Sermon Text. This is the critical part.
     const sermonTextData = await generateSermonText(geminiApiKey);
     
-    // Step 2: Attempt to generate audio. This is optional.
-    let audioBase64 = null; // Default to null
+    let audioBase64 = null;
     try {
         audioBase64 = await generateAudio(sermonTextData.text, elevenLabsApiKey);
     } catch (error) {
-        // If audio fails, log it but don't crash. The sermon will be text-only.
         console.error("Audio generation failed, but continuing with text-only sermon:", error);
     }
 
-    // Step 3: Combine and return
     return {
         ...sermonTextData,
-        audioData: audioBase64, // Will be null if audio generation failed
+        audioData: audioBase64,
         createdAt: new Date().toISOString(),
     };
 }
@@ -149,36 +182,22 @@ async function generateAudio(text, apiKey) {
     const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; 
     const ELEVENLABS_URL = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
 
-    // ElevenLabs has a character limit per request. We'll send the text in chunks.
-    const chunks = text.match(/[\s\S]{1,2500}/g) || [];
-    const audioBlobs = [];
+    // A full sermon is very long. We send only the first ~2500 chars to save costs/time.
+    const textForAudio = text.substring(0, 2500);
 
-    for (const chunk of chunks) {
-        const response = await fetch(ELEVENLABS_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': apiKey,
-            },
-            body: JSON.stringify({
-                text: chunk,
-                model_id: 'eleven_multilingual_v2',
-                voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-            }),
-        });
-        if (!response.ok) throw new Error(`ElevenLabs API Error: ${await response.text()}`);
-        const blob = await response.blob();
-        audioBlobs.push(blob);
-    }
+    const response = await fetch(ELEVENLABS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+        body: JSON.stringify({
+            text: textForAudio,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+        }),
+    });
 
-    // This part requires a more complex library to merge audio blobs in a serverless environment.
-    // For simplicity, we'll just use the first chunk for now. A full solution would use an audio library.
-    if (audioBlobs.length > 0) {
-        const audioArrayBuffer = await audioBlobs[0].arrayBuffer();
-        const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
-        return audioBase64;
-    }
+    if (!response.ok) throw new Error(`ElevenLabs API Error: ${await response.text()}`);
     
-    return null;
+    const audioArrayBuffer = await response.arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
 }
 
