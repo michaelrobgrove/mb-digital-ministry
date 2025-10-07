@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const day = String(today.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
 
-    const devotionalUrl = `/devotionals/${dateString}.md`;
+    const devotionalUrl = `/devotionals/${dateString}.txt`;
 
     // Fetch the devotional file for today
     fetch(devotionalUrl)

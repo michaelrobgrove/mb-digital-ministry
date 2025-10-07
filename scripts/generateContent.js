@@ -51,7 +51,7 @@ async function main() {
             const response = await result.response;
             let aiText = response.text();
 
-            const filePath = path.join(OUTPUT_DIR, `${dateString}.md`);
+            const filePath = path.join(OUTPUT_DIR, `${dateString}.txt`);
             await fs.writeFile(filePath, aiText);
 
             console.log(`   -> Successfully saved to ${filePath}`);
