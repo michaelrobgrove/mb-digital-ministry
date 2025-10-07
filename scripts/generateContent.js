@@ -50,6 +50,13 @@ async function main() {
             const result = await model.generateContent(prompt);
             const response = await result.response;
             let aiText = response.text();
+            // --- ADD THIS BLOCK FOR MONETIZATION ---
+const affiliateFooter = `
+\n---
+*Check out this amazing KJV bible on Amazon. https://amzn.to/3Wd4Cpf.*
+`;
+aiText += affiliateFooter;
+// ------------------------------------
 
             const filePath = path.join(OUTPUT_DIR, `${dateString}.txt`);
             await fs.writeFile(filePath, aiText);
