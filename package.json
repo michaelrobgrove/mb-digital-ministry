@@ -1,0 +1,16 @@
+{
+  "name": "mb-digital-ministry",
+  "version": "1.0.0",
+  "description": "Content generation for the Maryland Baptist Digital Ministry.",
+  "main": "index.js",
+  "scripts": {
+    "generate": "node scripts/generateContent.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.14.1",
+    "dotenv": "^16.4.5"
+  }
+}
