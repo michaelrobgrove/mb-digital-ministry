@@ -11,7 +11,7 @@
 
     <header class="hero-gradient text-white relative">
         <div class="absolute top-0 right-0 p-6 z-20">
-            <button id="mobile-menu-btn" class="md:hidden text-white">
+            <button id="mobile-menu-btn" class="md-hidden text-white">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
         </div>
@@ -59,7 +59,7 @@
                     <div class="py-1"><svg class="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8h2v2H9v-2z"/></svg></div>
                     <div>
                         <p class="font-bold">Please Read Before Submitting</p>
-                        <p class="text-sm">Prayer requests are displayed publicly on our prayer wall after a brief review. For your privacy, please do not include last names, addresses, phone numbers, or any other sensitive personal information.</p>
+                        <p class="text-sm">Prayer requests are displayed publicly after a brief review. For your privacy, please do not include last names, addresses, phone numbers, or any other sensitive personal information.</p>
                     </div>
                 </div>
             </div>
@@ -71,9 +71,9 @@
                 </div>
                 <div>
                     <label for="request" class="block text-lg font-semibold text-gray-700 mb-2">Your Prayer Request:</label>
-                    <textarea id="request" name="request" rows="6" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="Please pray for..."></textarea>
+                    <textarea id="request-text" name="request-text" rows="6" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="Please pray for..."></textarea>
                 </div>
-                <button type="submit" class="w-full bg-primary-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-900 transition-colors shadow-lg">Submit for Review</button>
+                <button type="submit" id="submit-button" class="w-full bg-primary-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-900 transition-colors shadow-lg">Submit for Review</button>
             </form>
             <div id="form-success" class="hidden mt-8 text-center bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg font-sans">
                 <p class="font-bold">Thank You!</p>
@@ -84,91 +84,94 @@
         <section>
             <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Community Prayer Wall</h2>
             <div id="prayer-wall" class="space-y-6">
-                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary-blue">
-                    <p class="text-gray-700 mb-3 font-serif text-lg">"Please pray for my family's health and for peace during a difficult time we are facing. Thank you all."</p>
-                    <p class="text-right text-gray-500 font-sans text-sm">- Sarah</p>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary-blue">
-                    <p class="text-gray-700 mb-3 font-serif text-lg">"Prayers for guidance and wisdom as I start a new job next week. I want to honor God in my work."</p>
-                    <p class="text-right text-gray-500 font-sans text-sm">- David</p>
-                </div>
-                </div>
+                <p id="loading-message" class="text-center text-gray-500 font-sans">Loading prayers...</p>
+            </div>
         </section>
 
     </main>
 
     <footer class="bg-gray-800 text-white py-12 font-sans">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-3 gap-8 mb-8">
-                <div>
-                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-12 mb-4 brightness-0 invert">
-                    <p class="text-gray-400">A digital ministry serving believers with biblical truth and compassion.</p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
-                        <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
-                        <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
-                        <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-4">About</h3>
-                    <ul class="space-y-2">
-                        <li><a href="/about.html" class="text-gray-400 hover:text-white transition-colors">Our Beliefs</a></li>
-                        <li><a href="/about.html#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
-                <p class="mb-2">© 2025 Maryland Baptist Digital Ministry. All rights reserved.</p>
-                <p class="text-sm">Website designed and developed by 
-                    <a href="https://www.alfredwebdesign.com" target="_blank" rel="noopener noreferrer" class="text-accent-gold hover:underline">Alfred Web Design & Shirts</a>
-                </p>
-            </div>
-        </div>
-    </footer>
+        </footer>
 
     <script>
+        // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
+        // -- PRAYER WALL LOGIC --
         const prayerForm = document.getElementById('prayer-form');
         const formSuccess = document.getElementById('form-success');
         const prayerWall = document.getElementById('prayer-wall');
+        const loadingMessage = document.getElementById('loading-message');
+        const submitButton = document.getElementById('submit-button');
         
-        prayerForm.addEventListener('submit', (e) => {
+        // Function to fetch and display prayers
+        async function fetchPrayers() {
+            try {
+                const response = await fetch('/api/prayer');
+                const prayers = await response.json();
+
+                // Clear the wall before adding new prayers
+                prayerWall.innerHTML = '';
+                
+                if (prayers.length === 0) {
+                    prayerWall.innerHTML = '<p class="text-center text-gray-500 font-sans">No prayer requests at the moment. Be the first to share!</p>';
+                } else {
+                    prayers.forEach(prayer => {
+                        const prayerEl = document.createElement('div');
+                        prayerEl.className = 'bg-white rounded-lg shadow p-6 border-l-4 border-primary-blue';
+                        prayerEl.innerHTML = `
+                            <p class="text-gray-700 mb-3 font-serif text-lg">"${prayer.requestText}"</p>
+                            <p class="text-right text-gray-500 font-sans text-sm">- ${prayer.firstName}</p>
+                        `;
+                        prayerWall.appendChild(prayerEl);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch prayers:', error);
+                prayerWall.innerHTML = '<p class="text-center text-red-500 font-sans">Could not load prayer requests. Please try again later.</p>';
+            }
+        }
+        
+        // Handle form submission
+        prayerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            formSuccess.classList.remove('hidden');
-
-            const firstName = document.getElementById('first-name').value;
-            const requestText = document.getElementById('request').value;
-
-            // In a real application, you would send this data to your backend for moderation.
-            // The code below is a CLIENT-SIDE DEMO to show how a new request would look.
-            // It does not persist the data and is not moderated.
-            const newRequestDiv = document.createElement('div');
-            newRequestDiv.className = 'bg-white rounded-lg shadow p-6 border-l-4 border-yellow-400 animate-pulse';
-            newRequestDiv.innerHTML = `
-                <p class="text-gray-400 mb-2 font-sans text-sm">Awaiting review...</p>
-                <p class="text-gray-700 mb-3 font-serif text-lg">"${requestText}"</p>
-                <p class="text-right text-gray-500 font-sans text-sm">- ${firstName}</p>
-            `;
-            // Add the new request to the top of the wall
-            prayerWall.prepend(newRequestDiv);
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
             
-            prayerForm.reset();
+            const firstName = document.getElementById('first-name').value;
+            const requestText = document.getElementById('request-text').value;
 
-            // Hide the success message after a few seconds
-            setTimeout(() => {
-                formSuccess.classList.add('hidden');
-            }, 5000);
+            try {
+                const response = await fetch('/api/prayer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, requestText }),
+                });
+
+                if (response.ok) {
+                    formSuccess.classList.remove('hidden');
+                    prayerForm.reset();
+                    // Refresh the prayer list after a short delay to allow for processing
+                    setTimeout(fetchPrayers, 2000);
+                } else {
+                    alert('An error occurred. Please try again.');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('A network error occurred. Please try again.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit for Review';
+                setTimeout(() => { formSuccess.classList.add('hidden'); }, 5000);
+            }
         });
+        
+        // Fetch prayers when the page loads
+        document.addEventListener('DOMContentLoaded', fetchPrayers);
     </script>
-
 </body>
 </html>
