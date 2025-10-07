@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles to define our specific colors for Tailwind's JIT compiler */
-        /* You can customize these hex codes */
         :root {
             --color-primary-blue: #004080; /* A slightly darker blue for contrast */
             --color-accent-gold: #D4AF37;  /* A classic gold */
@@ -16,50 +15,52 @@
         .bg-primary-blue { background-color: var(--color-primary-blue); }
         .text-accent-gold { color: var(--color-accent-gold); }
         .border-accent-gold { border-color: var(--color-accent-gold); }
-
-        /* Ensure full viewport height */
-        html, body {
-            height: 100%;
-        }
         body {
             font-family: 'Inter', sans-serif; /* A modern font choice */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f8fafc; /* Light grey background */
-            margin: 0;
-            text-align: center;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="h-full flex flex-col items-center justify-center bg-gray-50 p-4">
 
-    <div class="max-w-xl mx-auto p-8 bg-white rounded-lg shadow-xl border border-gray-100">
+    <main class="max-w-xl w-full mx-auto p-8 bg-white rounded-lg shadow-xl border border-gray-100">
         <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="mx-auto h-32 mb-6">
         
-        <h1 class="text-4xl md:text-5xl font-extrabold text-primary-blue mb-4">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-primary-blue mb-4 text-center">
             A New Chapter is on the Horizon.
         </h1>
-        <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        <p class="text-lg text-gray-700 leading-relaxed mb-6 text-center">
             The <span class="font-semibold text-primary-blue">Maryland Baptist Digital Ministry</span> is preparing to launch a new online resource for community, study, and daily inspiration.
         </p>
-        <p class="text-xl font-bold text-accent-gold mb-8">
+        <p class="text-xl font-bold text-accent-gold mb-8 text-center">
             Launching in late October 2025.
         </p>
 
         <div class="verse-generator p-6 bg-blue-50 border-l-4 border-primary-blue rounded-md shadow-inner">
-            <p class="text-gray-800 text-lg mb-4">While you wait, here is a word of encouragement:</p>
-            <div id="verse-display" class="font-medium text-gray-600 italic min-h-[60px] flex items-center justify-center mb-4 px-4">
+            <p class="text-gray-800 text-lg mb-4 text-center">While you wait, here is a word of encouragement:</p>
+            <div id="verse-display" class="font-medium text-gray-600 italic min-h-[60px] flex items-center justify-center mb-4 px-4 text-center">
                 "Trust in the LORD with all thine heart; and lean not unto thine own understanding."<br>- Proverbs 3:5
             </div>
             <button onclick="generateVerse()" class="bg-primary-blue hover:bg-opacity-90 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out shadow-md">
                 Get Another Verse
             </button>
         </div>
-    </div>
+    </main>
+
+    <footer class="w-full text-center mt-8 py-4">
+        <p class="text-sm text-gray-500">
+            Website designed and developed by 
+            <a href="https://www.alfredwebdesign.com" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               title="Alfred Web Design & Shirts - Web Design and Custom Apparel"
+               class="font-semibold text-gray-600 hover:text-primary-blue underline transition-colors">
+               Alfred Web Design & Shirts
+            </a>.
+        </p>
+    </footer>
 
     <script>
         const verses = [
