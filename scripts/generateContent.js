@@ -3,8 +3,13 @@ const dotenv = require("dotenv");
 const fs = require("fs/promises");
 const path = require("path");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
+// Fallback for missing .env (optional - for local testing)
+if (!process.env.GEMINI_API_KEY) {
+    console.error('ERROR: GEMINI_API_KEY not found in environment variables');
+    process.exit(1);
+}
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
