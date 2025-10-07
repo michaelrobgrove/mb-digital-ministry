@@ -18,27 +18,19 @@ function getSundayKey(date) {
     return `sermon:${sunday.toISOString().split('T')[0]}`;
 }
 
-/**
- * REWRITTEN: More reliable function to get the most recent Sunday 8:45 AM ET release time.
- * This avoids depending on server-specific locale strings.
- */
 function getMostRecentSunday845AMET() {
     const now = new Date();
-    // EDT is UTC-4. The offset is in minutes.
     const edtOffset = -4 * 60; 
     const nowInUTC = now.getTime() + (now.getTimezoneOffset() * 60000);
     const nowET = new Date(nowInUTC + (edtOffset * 60000));
 
-    const dayOfWeek = nowET.getDay(); // Sunday is 0
+    const dayOfWeek = nowET.getDay();
     let daysToSubtract = dayOfWeek;
 
-    // Get the date of the most recent Sunday
     const releaseDate = new Date(nowET);
     releaseDate.setDate(releaseDate.getDate() - daysToSubtract);
     releaseDate.setHours(8, 45, 0, 0);
 
-    // If the calculated release time is in the future (e.g., it's Sunday at 7am),
-    // then the "current" sermon is still from the *previous* week.
     if (releaseDate > nowET) {
         releaseDate.setDate(releaseDate.getDate() - 7);
     }
@@ -65,7 +57,6 @@ async function handleGetRequest(context) {
         const list = await env.MBSERMON.list({ prefix: 'sermon:' });
         console.log(`Found ${list.keys.length} sermon keys in KV.`);
 
-        // If there are no sermons at all, generate the first one synchronously.
         if (list.keys.length === 0) {
             console.log("No sermons exist. Triggering initial synchronous generation.");
             const firstSermon = await generateAndCacheSermon(env);
@@ -75,12 +66,10 @@ async function handleGetRequest(context) {
             });
         }
 
-        // If sermons exist, fetch them all.
         const sermonPromises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
         let allSermons = (await Promise.all(sermonPromises)).filter(Boolean);
         allSermons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        // Check if the latest sermon is stale.
         const latestSermon = allSermons[0];
         const releaseTime = getMostRecentSunday845AMET();
         const sermonTimestamp = new Date(latestSermon.createdAt);
@@ -173,16 +162,25 @@ async function generateSermonText(apiKey) {
 
     if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
     const data = await response.json();
-    const sermonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    let sermonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!sermonText) throw new Error('No valid sermon text returned from Gemini.');
-    return JSON.parse(sermonText);
+    
+    // --- NEW: Robust JSON parsing ---
+    try {
+        // Clean the string: remove markdown backticks and "json" prefix
+        sermonText = sermonText.replace(/^```json\n/, '').replace(/\n```$/, '');
+        return JSON.parse(sermonText);
+    } catch (e) {
+        console.error("Failed to parse JSON from Gemini response. Raw text:", sermonText);
+        // Throw a new error to be caught by the calling function
+        throw new Error("Malformed JSON received from AI model.");
+    }
 }
 
 async function generateAudio(text, apiKey) {
     const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; 
     const ELEVENLABS_URL = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
 
-    // A full sermon is very long. We send only the first ~2500 chars to save costs/time.
     const textForAudio = text.substring(0, 2500);
 
     const response = await fetch(ELEVENLABS_URL, {
