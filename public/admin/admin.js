@@ -1,86 +1,152 @@
-/* Admin frontend script - minimal, uses Fetch to call functions endpoints.
-   Assumes env: BLOG_KV and authentication token stored in localStorage as 'awd_token'
-*/
-(async function(){
-  const apiBase = '/api';
-  let token = localStorage.getItem('awd_token');
+// File Path: /public/admin/admin.js
+document.addEventListener('DOMContentLoaded', () => {
+    const loginScreen = document.getElementById('login-screen');
+    const adminPanel = document.getElementById('admin-panel');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-  // Simple check - redirect to login if no token
-  if (!token) {
-    const u = prompt('Admin token missing. Enter admin token:');
-    if (!u) return alert('No token provided.');
-    token = u;
-    localStorage.setItem('awd_token', token);
-  }
+    let token = localStorage.getItem('mb_admin_token');
 
-  const q = new Quill('#editor', { theme: 'snow' });
-
-  async function api(path, opts={}) {
-    opts.headers = opts.headers || {};
-    opts.headers['Content-Type'] = 'application/json';
-    opts.headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch(path, opts);
-    if (res.status === 401) {
-      localStorage.removeItem('awd_token');
-      alert('Unauthorized - token removed. Reload to login.');
-      throw new Error('Unauthorized');
+    // --- API HELPER ---
+    async function api(path, opts = {}) {
+        opts.headers = opts.headers || {};
+        opts.headers['Content-Type'] = 'application/json';
+        if (token) {
+            opts.headers['Authorization'] = 'Bearer ' + token;
+        }
+        const response = await fetch('/api/admin' + path, opts);
+        if (response.status === 401) {
+            logout();
+            throw new Error('Unauthorized');
+        }
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'API Error');
+        }
+        return response.json();
     }
-    return res.json();
-  }
 
-  async function loadPosts(){
-    const data = await api('/api/admin/posts', { method: 'GET' });
-    const wrap = document.getElementById('postsList');
-    wrap.innerHTML = '';
-    data.posts.forEach(p=>{
-      const el = document.createElement('div');
-      el.className = 'post-item';
-      el.innerHTML = `<strong>${p.title}</strong><div>${new Date(p.createdAt).toLocaleString()}</div>
-      <button data-id="${p.id}" class="deleteBtn">Delete</button>
-      <a href="/posts/${p.slug}" target="_blank">View</a>`;
-      wrap.appendChild(el);
+    // --- AUTHENTICATION ---
+    function showLogin() {
+        loginScreen.classList.remove('hidden');
+        adminPanel.classList.add('hidden');
+    }
+
+    function showAdmin() {
+        loginScreen.classList.add('hidden');
+        adminPanel.classList.remove('hidden');
+        loadSermons();
+        loadPrayers();
+    }
+
+    function logout() {
+        localStorage.removeItem('mb_admin_token');
+        token = null;
+        showLogin();
+    }
+
+    loginBtn.addEventListener('click', async () => {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        try {
+            const data = await api('/login', {
+                method: 'POST',
+                body: JSON.stringify({ username, password })
+            });
+            token = data.token;
+            localStorage.setItem('mb_admin_token', token);
+            showAdmin();
+        } catch (e) {
+            alert('Login failed: ' + e.message);
+        }
     });
-    document.querySelectorAll('.deleteBtn').forEach(b=>b.addEventListener('click', async (e)=>{
-      const id = e.target.dataset.id;
-      await fetch('/api/admin/posts/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token }});
-      loadPosts();
-    }));
-  }
 
-  document.getElementById('createPost').addEventListener('click', async ()=>{
-    const title = document.getElementById('postTitle').value;
-    const content = q.root.innerHTML;
-    const tags = document.getElementById('postTags').value.split(',').map(s=>s.trim()).filter(Boolean);
-    const file = document.getElementById('postImage').files[0];
-    let imageKey = null;
-    if (file) {
-      const buf = await file.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      imageKey = 'data:' + file.type + ';base64,' + b64;
+    logoutBtn.addEventListener('click', logout);
+
+    // --- SERMONS ---
+    const sermonsList = document.getElementById('sermonsList');
+    const generateSermonBtn = document.getElementById('generateSermonBtn');
+
+    async function loadSermons() {
+        sermonsList.innerHTML = 'Loading sermons...';
+        try {
+            const sermons = await api('/sermons');
+            sermonsList.innerHTML = sermons.map(s => `
+                <div class="post-item">
+                    <strong>${s.title}</strong>
+                    <div>${new Date(s.createdAt).toLocaleString()}</div>
+                    <button class="delete-sermon" data-id="${s.id}">Delete</button>
+                </div>
+            `).join('');
+        } catch (e) {
+            sermonsList.innerHTML = `<p class="error">Failed to load sermons: ${e.message}</p>`;
+        }
     }
-    await api('/api/admin/posts', { method: 'POST', body: JSON.stringify({ title, body: content, tags, imageKey }) });
-    loadPosts();
-  });
+    
+    generateSermonBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to generate a new sermon? This will replace the current week\'s sermon if it exists.')) return;
+        try {
+            await api('/sermons/generate', { method: 'POST' });
+            alert('New sermon generation triggered. It will be available on the next page load.');
+            loadSermons();
+        } catch (e) {
+            alert('Failed to trigger generation: ' + e.message);
+        }
+    });
 
-  document.getElementById('generatePost').addEventListener('click', async ()=>{
-    const cat = prompt('Category (e.g. Web Design, Apparel)') || 'General';
-    await api('/api/admin/generate', { method: 'POST', body: JSON.stringify({ category: cat }) });
-    loadPosts();
-  });
+    sermonsList.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-sermon')) {
+            const id = e.target.dataset.id;
+            if (confirm(`Are you sure you want to delete this sermon?\nID: ${id}`)) {
+                try {
+                    await api(`/sermons/delete/${encodeURIComponent(id)}`);
+                    loadSermons();
+                } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+        }
+    });
 
-  async function loadContacts(){
-    const res = await fetch('/api/contacts?limit=50', { headers: { Authorization: 'Bearer ' + token }});
-    if (res.status === 200) {
-      const data = await res.json();
-      const wrap = document.getElementById('contactsList');
-      wrap.innerHTML = data.items.map(i=>`<div><strong>${i.name}</strong> (${i.email})<div>${i.page}</div></div>`).join('');
+    // --- PRAYERS ---
+    const prayersList = document.getElementById('prayersList');
+
+    async function loadPrayers() {
+        prayersList.innerHTML = 'Loading prayer logs...';
+        try {
+            const prayers = await api('/prayers');
+            prayersList.innerHTML = prayers.map(p => `
+                <div class="post-item ${p.moderationStatus === 'REJECT' ? 'rejected' : ''}">
+                    <p><strong>${p.firstName}</strong> <span class="status ${p.moderationStatus}">${p.moderationStatus}</span></p>
+                    <p>${p.requestText}</p>
+                    <small>${new Date(p.timestamp).toLocaleString()}</small>
+                    <button class="delete-prayer" data-id="${p.id}">Delete Log</button>
+                </div>
+            `).join('');
+        } catch (e) {
+            prayersList.innerHTML = `<p class="error">Failed to load prayers: ${e.message}</p>`;
+        }
+    }
+
+    prayersList.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-prayer')) {
+            const id = e.target.dataset.id;
+            if (confirm(`Are you sure you want to delete this prayer log?\nID: ${id}`)) {
+                try {
+                    await api(`/prayers/delete/${encodeURIComponent(id)}`);
+                    loadPrayers();
+                } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+        }
+    });
+
+    // --- INITIAL LOAD ---
+    if (token) {
+        showAdmin();
     } else {
-      document.getElementById('contactsList').innerText = 'No contacts or unauthorized.';
+        showLogin();
     }
-  }
+});
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('awd_token'); location.reload(); });
-
-  await loadPosts();
-  loadContacts();
-})();
