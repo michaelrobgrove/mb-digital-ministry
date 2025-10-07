@@ -8,7 +8,7 @@ dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-const DAYS_TO_GENERATE = 7; 
+const DAYS_TO_GENERATE = 365; 
 const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'devotionals');
 
 function getPrompt(verseText, verseReference) {
