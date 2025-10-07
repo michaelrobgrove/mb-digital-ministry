@@ -19,7 +19,8 @@ export async function onRequest(context) {
 
 async function handleGetRequest(context) {
     try {
-        const { env }_ = context;
+        // --- FIX: Removed typo from this line ---
+        const { env } = context;
         const list = await env.MBPRAY.list({ prefix: 'prayer:' });
         const prayerPromises = list.keys.map(key => env.MBPRAY.get(key.name, { type: 'json' }));
         const prayers = await Promise.all(prayerPromises);
@@ -88,7 +89,6 @@ async function moderateWithGemini(text, apiKey) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                // --- FIX: Increased token limit to prevent premature cutoff ---
                 generationConfig: { temperature: 0, maxOutputTokens: 20 },
             }),
         });
