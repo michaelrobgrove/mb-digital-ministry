@@ -32,7 +32,7 @@
                 </a>
             </div>
             
-            <h1 class="text-4xl md:text-5xl font-bold mb-3">Prayer Requests</h1>
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">Community Prayer</h1>
             <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans">"Therefore I tell you, whatever you ask in prayer, believe that you have received it, and it will be yours." - Mark 11:24</p>
         </div>
     </header>
@@ -50,31 +50,51 @@
     </div>
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+        
+        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-16">
             <h2 class="text-3xl font-bold text-gray-800 mb-4 text-center">Share Your Prayer Request</h2>
-            <p class="text-gray-600 mb-8 text-center max-w-2xl mx-auto font-sans">
-                We believe in the power of prayer. Please share your request below, and our community will lift you up in prayer.
-            </p>
+            
+            <div class="bg-yellow-50 border-l-4 border-accent-gold p-4 rounded-r-lg mb-8 font-sans">
+                <div class="flex">
+                    <div class="py-1"><svg class="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8h2v2H9v-2z"/></svg></div>
+                    <div>
+                        <p class="font-bold">Please Read Before Submitting</p>
+                        <p class="text-sm">Prayer requests are displayed publicly on our prayer wall after a brief review. For your privacy, please do not include last names, addresses, phone numbers, or any other sensitive personal information.</p>
+                    </div>
+                </div>
+            </div>
+            
             <form id="prayer-form" class="space-y-6 font-sans">
                 <div>
-                    <label for="name" class="block text-lg font-semibold text-gray-700 mb-2">Your Name:</label>
-                    <input type="text" id="name" name="name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="John Doe">
+                    <label for="name" class="block text-lg font-semibold text-gray-700 mb-2">First Name:</label>
+                    <input type="text" id="first-name" name="first-name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="John">
                 </div>
                 <div>
                     <label for="request" class="block text-lg font-semibold text-gray-700 mb-2">Your Prayer Request:</label>
-                    <textarea id="request" name="request" rows="8" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="Please pray for..."></textarea>
+                    <textarea id="request" name="request" rows="6" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-lg" placeholder="Please pray for..."></textarea>
                 </div>
-                <div class="flex items-center">
-                    <input type="checkbox" id="is_anonymous" name="is_anonymous" class="h-5 w-5 text-primary-blue rounded border-gray-300 focus:ring-accent-gold">
-                    <label for="is_anonymous" class="ml-3 block text-md text-gray-700">Submit Anonymously</label>
-                </div>
-                <button type="submit" class="w-full bg-primary-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-900 transition-colors shadow-lg">Submit Prayer Request</button>
+                <button type="submit" class="w-full bg-primary-blue text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-blue-900 transition-colors shadow-lg">Submit for Review</button>
             </form>
-            <div id="form-success" class="hidden mt-8 text-center bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg">
+            <div id="form-success" class="hidden mt-8 text-center bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg font-sans">
                 <p class="font-bold">Thank You!</p>
-                <p>Your prayer request has been received. We are praying for you.</p>
+                <p>Your prayer request has been submitted for review. It will appear on the prayer wall shortly if approved.</p>
             </div>
         </div>
+
+        <section>
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Community Prayer Wall</h2>
+            <div id="prayer-wall" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary-blue">
+                    <p class="text-gray-700 mb-3 font-serif text-lg">"Please pray for my family's health and for peace during a difficult time we are facing. Thank you all."</p>
+                    <p class="text-right text-gray-500 font-sans text-sm">- Sarah</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary-blue">
+                    <p class="text-gray-700 mb-3 font-serif text-lg">"Prayers for guidance and wisdom as I start a new job next week. I want to honor God in my work."</p>
+                    <p class="text-right text-gray-500 font-sans text-sm">- David</p>
+                </div>
+                </div>
+        </section>
+
     </main>
 
     <footer class="bg-gray-800 text-white py-12 font-sans">
@@ -119,10 +139,34 @@
 
         const prayerForm = document.getElementById('prayer-form');
         const formSuccess = document.getElementById('form-success');
+        const prayerWall = document.getElementById('prayer-wall');
+        
         prayerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             formSuccess.classList.remove('hidden');
+
+            const firstName = document.getElementById('first-name').value;
+            const requestText = document.getElementById('request').value;
+
+            // In a real application, you would send this data to your backend for moderation.
+            // The code below is a CLIENT-SIDE DEMO to show how a new request would look.
+            // It does not persist the data and is not moderated.
+            const newRequestDiv = document.createElement('div');
+            newRequestDiv.className = 'bg-white rounded-lg shadow p-6 border-l-4 border-yellow-400 animate-pulse';
+            newRequestDiv.innerHTML = `
+                <p class="text-gray-400 mb-2 font-sans text-sm">Awaiting review...</p>
+                <p class="text-gray-700 mb-3 font-serif text-lg">"${requestText}"</p>
+                <p class="text-right text-gray-500 font-sans text-sm">- ${firstName}</p>
+            `;
+            // Add the new request to the top of the wall
+            prayerWall.prepend(newRequestDiv);
+            
             prayerForm.reset();
+
+            // Hide the success message after a few seconds
+            setTimeout(() => {
+                formSuccess.classList.add('hidden');
+            }, 5000);
         });
     </script>
 
