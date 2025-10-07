@@ -3,68 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Give Online - Maryland Baptist Digital Ministry</title>
+    <title>Support Our Ministry - Maryland Baptist Digital Ministry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="bg-gray-50">
 
+    <!-- Header & Hero Section -->
     <header class="hero-gradient text-white relative">
         <div class="absolute top-0 right-0 p-6 z-20">
             <button id="mobile-menu-btn" class="md:hidden text-white">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
         </div>
-
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
             <nav class="header-nav pt-4 pb-10">
                 <a href="/">Home</a>
                 <a href="/pastor-aiden.html">Ask Pastor AIden</a>
                 <a href="/devotional.html">Daily Devotional</a>
                 <a href="/prayer.html">Prayer Requests</a>
+                <a href="/sermon.html">Weekly Sermon</a>
                 <a href="/about.html">About</a>
                 <a href="/giving.html" class="active">Give</a>
             </nav>
-
             <div class="mb-8">
-                <a href="/">
-                    <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert">
-                </a>
+                <a href="/"><img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert"></a>
             </div>
-            
-            <h1 class="text-4xl md:text-5xl font-bold mb-3">Support Our Ministry</h1>
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">Support This Ministry</h1>
             <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans">"Each one must give as he has decided in his heart, not reluctantly or under compulsion, for God loves a cheerful giver." - 2 Corinthians 9:7</p>
         </div>
     </header>
 
-    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
+    <!-- Mobile Menu Panel -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue z-50 p-8 text-white">
         <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
-            <a href="/" class="hover:text-accent-gold">Home</a>
+             <a href="/" class="hover:text-accent-gold">Home</a>
             <a href="/pastor-aiden.html" class="hover:text-accent-gold">Ask Pastor AIden</a>
             <a href="/devotional.html" class="hover:text-accent-gold">Daily Devotional</a>
             <a href="/prayer.html" class="hover:text-accent-gold">Prayer Requests</a>
+            <a href="/sermon.html" class="hover:text-accent-gold">Weekly Sermon</a>
             <a href="/about.html" class="hover:text-accent-gold">About</a>
             <a href="/giving.html" class="hover:text-accent-gold">Give</a>
         </div>
     </div>
 
+    <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12 text-center">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">Partner With Us Through Giving</h2>
-            <div class="prose max-w-none mx-auto text-center">
-                <p>Your generous support enables us to continue providing free biblical resources, daily devotionals, and AI-powered pastoral guidance to people all over the world. Every gift helps us fulfill our mission of spreading the Gospel and edifying the church.</p>
-                <p>Thank you for your faithfulness and partnership in this digital ministry.</p>
+        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Partner With Us</h2>
+                <div class="prose max-w-none mx-auto text-center">
+                    <p>Your support helps cover the operational costs of this online ministry, including server hosting, domain fees, and the AI services that power Pastor AIden and our weekly content.</p>
+                </div>
             </div>
             
-            <div class="mt-10 border-t pt-10">
-                <h3 class="text-2xl font-bold text-gray-800 mb-6">Give Securely Online</h3>
-                <p class="text-gray-600 mb-8 max-w-xl mx-auto font-sans">Click the button below to make a one-time or recurring donation through our secure online giving portal.</p>
-                <a href="#" class="inline-block bg-accent-gold text-white font-bold py-4 px-12 rounded-lg text-xl hover:bg-yellow-600 transition-colors shadow-lg">Give Now</a>
+            <!-- Donorbox Embedded Form -->
+            <div class="max-w-md mx-auto">
+                <script src="https://donorbox.org/widget.js" paypalExpress="false"></script>
+                <iframe src="https://donorbox.org/embed/maryland-baptist-tithe" name="donorbox" allowpaymentrequest="allowpaymentrequest" seamless="seamless" frameborder="0" scrolling="no" height="900px" width="100%" style="max-width: 500px; min-width: 250px; max-height:none!important"></iframe>
             </div>
+
+            <!-- Disclaimer -->
+            <p class="text-xs text-gray-500 mt-8 font-sans text-center">
+                Please note: Maryland Baptist Digital Ministry is currently a personal project and not a registered 501(c)(3) organization. Contributions are greatly appreciated to support our operational costs but are not tax-deductible at this time.
+            </p>
+
+            <!-- Donor Wall Section -->
+            <div class="mt-16 border-t pt-12 text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Our Valued Supporters</h2>
+                <p class="text-gray-600 mb-8 max-w-xl mx-auto font-sans">We are deeply grateful for every contribution that helps sustain this ministry.</p>
+
+                <div class="max-w-md mx-auto">
+                    <script src="https://donorbox.org/widget.js" paypalExpress="false"></script>
+                    <iframe height="345px" width="100%" src="https://donorbox.org/embed/maryland-baptist-tithe?donor_wall_color=%23003870&only_donor_wall=true" style="width: 100%; max-width:500px; min-width:310px; min-height: 345px;" seamless="seamless" name="donorbox" frameborder="0" scrolling="no"></iframe>
+                </div>
+            </div>
+            
         </div>
     </main>
 
+    <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 font-sans">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8 mb-8">
@@ -78,6 +97,7 @@
                         <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
                         <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
                         <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
+                        <li><a href="/sermon.html" class="text-gray-400 hover:text-white transition-colors">Weekly Sermon</a></li>
                         <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
                     </ul>
                 </div>
@@ -102,9 +122,10 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
-        mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+        if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
+        if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
     </script>
 
 </body>
 </html>
+
