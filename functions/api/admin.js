@@ -1,28 +1,17 @@
 /**
  * File Path: /functions/api/admin.js
- * * Cloudflare Pages Function for Maryland Baptist Admin Dashboard
+ * CORRECTED: Replaced Node.js 'crypto' with the Web Crypto API for Cloudflare compatibility.
  *
  * Routes:
- * - POST /api/admin/login -> returns JWT token
- * - GET  /api/admin/sermons -> list sermons from MBSERMON
- * - DELETE /api/admin/sermons/delete/:id -> delete a sermon
- * - POST /api/admin/sermons/generate -> force generate a new sermon
- * - GET  /api/admin/prayers -> list prayers from MBPRAY_LOGS
- * - DELETE /api/admin/prayers/delete/:id -> delete a prayer request
- *
- * Environment variables expected:
- * - ADMIN_SECRET, SUPERADMIN_USERNAME, SUPERADMIN_PASSWORD
- * - GEMINI_API_KEY, ELEVENLABS_API_KEY
- * - MBSERMON (KV), MBPRAY (KV), MBPRAY_LOGS (KV)
+ * - POST /api/admin/login
+ * - GET  /api/admin/sermons, DELETE /api/admin/sermons/delete/:id, POST /api/admin/sermons/generate
+ * - GET  /api/admin/prayers, DELETE /api/admin/prayers/delete/:id
  */
-
-import { createHmac } from 'crypto';
 
 // --- ROUTER ---
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  // A more robust way to get the path segment after /api/admin/
   const pathSegments = url.pathname.split('/api/admin/');
   const path = pathSegments.length > 1 ? pathSegments[1] : '';
 
@@ -31,8 +20,7 @@ export async function onRequest(context) {
       return await handleLogin(request, env);
     }
     
-    // All routes below this require authentication
-    const user = authFromRequest(request, env);
+    const user = await authFromRequest(request, env);
     if (!user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
@@ -62,21 +50,46 @@ export async function onRequest(context) {
   }
 }
 
-// --- AUTHENTICATION ---
-function signToken(payload, secret) {
-  const str = JSON.stringify(payload);
-  const b64 = btoa(str);
-  const sig = createHmac('sha256', secret).update(b64).digest('hex');
-  return b64 + '.' + sig;
+// --- NEW AUTHENTICATION using Web Crypto API ---
+const textEncoder = new TextEncoder();
+
+async function getHmacKey(secret) {
+  return await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  );
 }
 
-function verifyToken(token, secret) {
+async function signToken(payload, secret) {
+  const key = await getHmacKey(secret);
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=/g, '');
+  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '');
+  const data = textEncoder.encode(`${header}.${payloadB64}`);
+  const signature = await crypto.subtle.sign('HMAC', key, data);
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '');
+  return `${header}.${payloadB64}.${signatureB64}`;
+}
+
+async function verifyToken(token, secret) {
   try {
-    const [b64, sig] = token.split('.');
-    const expected = createHmac('sha256', secret).update(b64).digest('hex');
-    if (expected !== sig) return null;
-    return JSON.parse(atob(b64));
+    const [header, payloadB64, signatureB64] = token.split('.');
+    if (!header || !payloadB64 || !signatureB64) return null;
+
+    const key = await getHmacKey(secret);
+    const data = textEncoder.encode(`${header}.${payloadB64}`);
+    
+    // Convert base64 signature back to buffer for verification
+    const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    
+    const isValid = await crypto.subtle.verify('HMAC', key, signature, data);
+    if (!isValid) return null;
+    
+    return JSON.parse(atob(payloadB64));
   } catch (e) {
+    console.error("Token verification error:", e);
     return null;
   }
 }
@@ -85,18 +98,19 @@ async function handleLogin(request, env) {
   const body = await request.json();
   const { username, password } = body;
   if (username === env.SUPERADMIN_USERNAME && password === env.SUPERADMIN_PASSWORD) {
-    const token = signToken({ username, iat: Date.now() }, env.ADMIN_SECRET);
+    const token = await signToken({ username, iat: Date.now() }, env.ADMIN_SECRET);
     return new Response(JSON.stringify({ token }), { status: 200 });
   }
   return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
 }
 
-function authFromRequest(request, env) {
+async function authFromRequest(request, env) {
   const h = request.headers.get('authorization') || '';
   if (!h.startsWith('Bearer ')) return null;
   const tok = h.slice(7);
-  return verifyToken(tok, env.ADMIN_SECRET || 'dev_secret');
+  return await verifyToken(tok, env.ADMIN_SECRET || 'dev_secret');
 }
+
 
 // --- SERMON ACTIONS ---
 async function listSermons(env) {
@@ -128,19 +142,15 @@ async function listPrayers(env) {
 
 async function deletePrayer(id, env) {
     await env.MBPRAY_LOGS.delete(id);
-    // Also try to delete from public prayers if it was approved
-    // Note: This is a simple check; a more robust system might link IDs directly.
     return new Response(JSON.stringify({ success: true, id }), { headers: { 'Content-Type': 'application/json' } });
 }
 
-// --- SERMON GENERATION LOGIC (Copied from your public sermon function) ---
-// NOTE: I am including the full generation logic here so this function is self-contained.
+// --- SERMON GENERATION LOGIC ---
 const getSundayKey = (date) => {
     const d = new Date(date);
     d.setDate(d.getDate() - d.getDay());
     return `sermon:${d.toISOString().split('T')[0]}`;
 };
-
 const getMostRecentSunday845AMET = () => {
     const now = new Date();
     const edtOffset = -4 * 60;
@@ -154,7 +164,6 @@ const getMostRecentSunday845AMET = () => {
     }
     return releaseDate;
 };
-
 async function generateAndCacheSermon(env) {
     const releaseTime = getMostRecentSunday845AMET();
     const cacheKey = getSundayKey(releaseTime);
@@ -163,7 +172,6 @@ async function generateAndCacheSermon(env) {
     await env.MBSERMON.put(cacheKey, JSON.stringify(newSermon), { expirationTtl: 5616000 });
     return newSermon;
 }
-
 async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
     const sermonTextData = await generateSermonText(geminiApiKey);
     let audioBase64 = null;
@@ -174,12 +182,11 @@ async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
     }
     return { ...sermonTextData, audioData: audioBase64, createdAt: new Date().toISOString() };
 }
-
 async function generateSermonText(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const sermonThemes = ["a key passage from the book of Romans", "a key passage from the Gospel of John", "the concept of faith as described in the book of Hebrews", "a parable from the Gospel of Luke", "the theme of grace in the book of Ephesians", "a Psalm of praise and its meaning for today's believer", "the importance of fellowship from the book of Acts"];
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
-    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon... based on ${selectedTheme}. ... Your response MUST be a JSON object...`; // Shortened for brevity
+    const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references. Generate a full, expositional sermon of approximately 2,500 words based on ${selectedTheme}. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection. Your response MUST be a JSON object with the following schema: {"topic": "A short, engaging topic for the sermon (e.g., 'The Power of Grace')","title": "A formal title for the sermon (e.g., 'Unwavering Hope in Romans 8')","text": "The full text of the sermon, formatted with newline characters (\\n\\n) between paragraphs."}`;
     const response = await fetch(GEMINI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, response_mime_type: "application/json" } }) });
     if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
     const data = await response.json();
@@ -192,7 +199,6 @@ async function generateSermonText(apiKey) {
         throw new Error("Malformed JSON received from AI model.");
     }
 }
-
 async function generateAudio(text, apiKey) {
     const VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
     const ELEVENLABS_URL = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
