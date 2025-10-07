@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Devotional - Maryland Baptist Digital Ministry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-primary-blue: #004080;
+            --color-accent-gold: #D4AF37;
+            --color-dark-grey: #595959;
+        }
+        .text-primary-blue { color: var(--color-primary-blue); }
+        .bg-primary-blue { background-color: var(--color-primary-blue); }
+        .text-accent-gold { color: var(--color-accent-gold); }
+        .bg-accent-gold { background-color: var(--color-accent-gold); }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Devotional content styling */
+        #devotional-content h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        #devotional-content h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        #devotional-content p {
+            font-size: 1.125rem;
+            line-height: 1.75;
+            color: #4b5563;
+            margin-bottom: 1.25rem;
+        }
+        #devotional-content strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        #devotional-content em {
+            font-style: italic;
+            color: #6b7280;
+        }
+        #devotional-content a {
+            color: var(--color-primary-blue);
+            text-decoration: underline;
+        }
+        #devotional-content a:hover {
+            color: var(--color-accent-gold);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="h-full bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="/" class="flex items-center">
+                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-14">
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="/" class="text-gray-700 hover:text-primary-blue font-semibold transition-colors">Home</a>
+                    <a href="/pastor-aiden.html" class="text-gray-700 hover:text-primary-blue font-semibold transition-colors">Ask Pastor AIden</a>
+                    <a href="/devotional.html" class="text-primary-blue font-semibold border-b-2 border-accent-gold">Daily Devotional</a>
+                    <a href="/prayer.html" class="text-gray-700 hover:text-primary-blue font-semibold transition-colors">Prayer Requests</a>
+                    <a href="/about.html" class="text-gray-700 hover:text-primary-blue font-semibold transition-colors">About</a>
+                    <a href="/giving.html" class="bg-accent-gold text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition-colors">Give</a>
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="/" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-semibold">Home</a>
+                <a href="/pastor-aiden.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-semibold">Ask Pastor AIden</a>
+                <a href="/devotional.html" class="block px-3 py-2 bg-gray-100 text-primary-blue rounded-md font-semibold">Daily Devotional</a>
+                <a href="/prayer.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-semibold">Prayer Requests</a>
+                <a href="/about.html" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md font-semibold">About</a>
+                <a href="/giving.html" class="block px-3 py-2 bg-accent-gold text-white rounded-md font-semibold text-center">Give</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="bg-gradient-to-r from-primary-blue to-blue-800 text-white py-12 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="flex items-center justify-center mb-4">
+                <svg class="w-12 h-12 text-accent-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">Daily Devotional</h1>
+            <p class="text-lg text-gray-100" id="current-date">Loading...</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        
+        <article id="devotional-content" class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-12">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-blue mb-4"></div>
+                <p class="text-gray-500 text-lg">Loading today's devotional...</p>
+            </div>
+        </article>
+
+        <!-- Call to Action -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <a href="/pastor-aiden.html" class="bg-gradient-to-br from-accent-gold to-yellow-600 p-6 rounded-xl text-white hover:shadow-xl transition-all transform hover:scale-105">
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-accent-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Ask Pastor AIden</h3>
+                        <p class="text-sm text-gray-100">Have questions? Get biblical guidance.</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/prayer.html" class="bg-gradient-to-br from-primary-blue to-blue-700 p-6 rounded-xl text-white hover:shadow-xl transition-all transform hover:scale-105">
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Prayer Requests</h3>
+                        <p class="text-sm text-gray-100">Share your prayer needs with us.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-12 mb-4 brightness-0 invert">
+                    <p class="text-gray-400">A digital ministry serving believers with biblical truth and compassion.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
+                        <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
+                        <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
+                        <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">About</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/about.html" class="text-gray-400 hover:text-white transition-colors">Our Beliefs</a></li>
+                        <li><a href="/about.html#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p class="mb-2">© 2025 Maryland Baptist Digital Ministry. All rights reserved.</p>
+                <p class="text-sm">Website designed and developed by 
+                    <a href="https://www.alfredwebdesign.com" target="_blank" rel="noopener noreferrer" class="text-accent-gold hover:underline">Alfred Web Design & Shirts</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Display current date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+    <script src="/js/main.js"></script>
+
+</body>
+</html>
