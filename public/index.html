@@ -3,86 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coming Soon | Maryland Baptist Digital Ministry</title>
+    <title>Maryland Baptist Digital Ministry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles to define our specific colors for Tailwind's JIT compiler */
         :root {
-            --color-primary-blue: #004080; /* A slightly darker blue for contrast */
-            --color-accent-gold: #D4AF37;  /* A classic gold */
+            --color-primary-blue: #004080;
+            --color-accent-gold: #D4AF37;
         }
         .text-primary-blue { color: var(--color-primary-blue); }
         .bg-primary-blue { background-color: var(--color-primary-blue); }
-        .text-accent-gold { color: var(--color-accent-gold); }
-        .border-accent-gold { border-color: var(--color-accent-gold); }
-        body {
-            font-family: 'Inter', sans-serif; /* A modern font choice */
+        body { font-family: 'Inter', sans-serif; }
+        /* Style for the generated HTML from markdown */
+        #devotional-content h1 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700;
+            color: #1f2937; /* gray-800 */
+            margin-bottom: 1rem;
+        }
+        #devotional-content p {
+            font-size: 1.125rem; /* text-lg */
+            line-height: 1.75;
+            color: #4b5563; /* gray-600 */
+            margin-bottom: 1rem;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="h-full flex flex-col items-center justify-center bg-gray-50 p-4">
+<body class="h-full flex flex-col items-center bg-gray-50 p-4">
 
-    <main class="max-w-xl w-full mx-auto p-8 bg-white rounded-lg shadow-xl border border-gray-100">
-        <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="mx-auto h-32 mb-6">
+    <main class="max-w-3xl w-full mx-auto p-8 bg-white rounded-lg shadow-xl border border-gray-100">
+        <a href="/" aria-label="Homepage">
+            <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="mx-auto h-24 mb-6">
+        </a>
         
-        <h1 class="text-4xl md:text-5xl font-extrabold text-primary-blue mb-4 text-center">
-            A New Chapter is on the Horizon.
-        </h1>
-        <p class="text-lg text-gray-700 leading-relaxed mb-6 text-center">
-            The <span class="font-semibold text-primary-blue">Maryland Baptist Digital Ministry</span> is preparing to launch a new online resource for community, study, and daily inspiration.
-        </p>
-        <p class="text-xl font-bold text-accent-gold mb-8 text-center">
-            Launching in late October 2025.
-        </p>
-
-        <div class="verse-generator p-6 bg-blue-50 border-l-4 border-primary-blue rounded-md shadow-inner">
-            <p class="text-gray-800 text-lg mb-4 text-center">While you wait, here is a word of encouragement:</p>
-            <div id="verse-display" class="font-medium text-gray-600 italic min-h-[60px] flex items-center justify-center mb-4 px-4 text-center">
-                "Trust in the LORD with all thine heart; and lean not unto thine own understanding."<br>- Proverbs 3:5
-            </div>
-            <button onclick="generateVerse()" class="bg-primary-blue hover:bg-opacity-90 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out shadow-md">
-                Get Another Verse
-            </button>
-        </div>
+        <article id="devotional-content" class="prose lg:prose-xl max-w-none">
+            <p class="text-center text-gray-500">Loading today's devotional...</p>
+        </article>
     </main>
 
     <footer class="w-full text-center mt-8 py-4">
         <p class="text-sm text-gray-500">
             Website designed and developed by 
             <a href="https://www.alfredwebdesign.com" 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               title="Alfred Web Design & Shirts - Web Design and Custom Apparel"
+               target="_blank" rel="noopener noreferrer" title="Alfred Web Design & Shirts - Web Design and Custom Apparel"
                class="font-semibold text-gray-600 hover:text-primary-blue underline transition-colors">
                Alfred Web Design & Shirts
             </a>.
         </p>
     </footer>
 
-    <script>
-        const verses = [
-            { text: "I can do all things through Christ which strengtheneth me.", reference: "Philippians 4:13" },
-            { text: "The LORD is my shepherd; I shall not want.", reference: "Psalm 23:1" },
-            { text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.", reference: "John 3:16" },
-            { text: "Be still, and know that I am God.", reference: "Psalm 46:10" },
-            { text: "This is the day which the LORD hath made; we will rejoice and be glad in it.", reference: "Psalm 118:24" },
-            { text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.", reference: "Jeremiah 29:11" },
-            { text: "The steadfast love of the LORD never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.", reference: "Lamentations 3:22-23" },
-            { text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.", reference: "Isaiah 40:31" },
-            { text: "Finally, brethren, whatsoever things are true, whatsoever things are honest, whatsoever things are just, whatsoever things are pure, whatsoever things are lovely, whatsoever things are of good report; if there be any virtue, and if there be any praise, think on these things.", reference: "Philippians 4:8" }
-        ];
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
-        function generateVerse() {
-            const verseDisplay = document.getElementById('verse-display');
-            const randomIndex = Math.floor(Math.random() * verses.length);
-            const randomVerse = verses[randomIndex];
-            
-            verseDisplay.innerHTML = `"${randomVerse.text}"<br>- ${randomVerse.reference}`;
-        }
-    </script>
+    <script src="/js/main.js"></script>
 
 </body>
 </html>
