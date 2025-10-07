@@ -108,15 +108,11 @@
         const loadingMessage = document.getElementById('loading-message');
         const submitButton = document.getElementById('submit-button');
         
-        // Function to fetch and display prayers
         async function fetchPrayers() {
             try {
                 const response = await fetch('/api/prayer');
                 const prayers = await response.json();
-
-                // Clear the wall before adding new prayers
                 prayerWall.innerHTML = '';
-                
                 if (prayers.length === 0) {
                     prayerWall.innerHTML = '<p class="text-center text-gray-500 font-sans">No prayer requests at the moment. Be the first to share!</p>';
                 } else {
@@ -136,13 +132,13 @@
             }
         }
         
-        // Handle form submission
         prayerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             submitButton.disabled = true;
             submitButton.textContent = 'Submitting...';
             
             const firstName = document.getElementById('first-name').value;
+            // THIS LINE IS THE CRITICAL PART
             const requestText = document.getElementById('request-text').value;
 
             try {
@@ -151,11 +147,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ firstName, requestText }),
                 });
-
                 if (response.ok) {
                     formSuccess.classList.remove('hidden');
                     prayerForm.reset();
-                    // Refresh the prayer list after a short delay to allow for processing
                     setTimeout(fetchPrayers, 2000);
                 } else {
                     alert('An error occurred. Please try again.');
@@ -170,7 +164,6 @@
             }
         });
         
-        // Fetch prayers when the page loads
         document.addEventListener('DOMContentLoaded', fetchPrayers);
     </script>
 </body>
