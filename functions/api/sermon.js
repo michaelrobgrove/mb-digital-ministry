@@ -1,37 +1,84 @@
 /**
  * Cloudflare Function to generate and serve the weekly sermon text.
- * Caches the sermon for 24 hours to minimize API calls.
+ * Caches the sermon and regenerates it after 8:45 AM ET on Sundays.
  *
  * Required Environment Variables:
+ * - ADMIN_KEY: A secret key to authorize manual cache deletion.
  * - GEMINI_API_KEY: Your API key for the Google Gemini API.
  * - MBSERMON: The KV namespace for storing the weekly sermon.
  */
 
+/**
+ * Calculates the exact timestamp of the most recent Sunday at 8:45 AM Eastern Time.
+ * This is used to determine if the cached sermon is stale.
+ * @returns {Date} - The date object for the target release time.
+ */
+function getMostRecentSunday845AMET() {
+    // Workers run in UTC. We need to work with dates relative to America/New_York.
+    const now = new Date();
+    const nowET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+
+    // Find the date of the most recent Sunday
+    const dayOfWeek = nowET.getDay(); // Sunday is 0
+    const diff = nowET.getDate() - dayOfWeek;
+    const lastSunday = new Date(nowET.setDate(diff));
+
+    // Set the time to 8:45:00 AM
+    lastSunday.setHours(8, 45, 0, 0);
+
+    // If today is Sunday but it's BEFORE 8:45 AM, we should still serve the *previous* week's sermon.
+    // So, we check if the current ET time is earlier than the calculated release time.
+    if (nowET < lastSunday) {
+        // If it is, subtract 7 days to get the previous Sunday's release time.
+        lastSunday.setDate(lastSunday.getDate() - 7);
+    }
+
+    return lastSunday;
+}
+
+
 export async function onRequest(context) {
+    const { request } = context;
+
+    if (request.method === 'GET') {
+        return handleGetRequest(context);
+    }
+    if (request.method === 'DELETE') {
+        return handleDeleteRequest(context);
+    }
+    return new Response('Invalid request method.', { status: 405 });
+}
+
+
+async function handleGetRequest(context) {
     try {
         const { env } = context;
         const CACHE_KEY = 'current_sermon';
 
-        // 1. Try to get the sermon from the KV cache first
         const cachedSermon = await env.MBSERMON.get(CACHE_KEY, { type: 'json' });
+
         if (cachedSermon) {
-            return new Response(JSON.stringify(cachedSermon), {
-                headers: { 'Content-Type': 'application/json' },
-            });
+            const releaseTime = getMostRecentSunday845AMET();
+            const sermonTimestamp = new Date(cachedSermon.createdAt);
+
+            // If the sermon was created after the most recent release time, it's fresh.
+            if (sermonTimestamp >= releaseTime) {
+                return new Response(JSON.stringify(cachedSermon), {
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
         }
 
-        // 2. If not in cache, generate a new sermon
+        // If no cache or if the sermon is stale, generate a new one.
         const newSermon = await generateSermon(env.GEMINI_API_KEY);
 
-        // 3. Store the new sermon in KV for 24 hours (86400 seconds)
-        // Use waitUntil to not block the response to the user
+        // Store the new sermon in KV for 8 days as a fallback.
         context.waitUntil(
             env.MBSERMON.put(CACHE_KEY, JSON.stringify(newSermon), {
-                expirationTtl: 86400,
+                expirationTtl: 691200, // 8 days
             })
         );
         
-        // 4. Return the newly generated sermon
         return new Response(JSON.stringify(newSermon), {
             headers: { 'Content-Type': 'application/json' },
         });
@@ -43,14 +90,35 @@ export async function onRequest(context) {
 }
 
 /**
+ * Handles securely deleting the cached sermon to force a refresh.
+ */
+async function handleDeleteRequest(context) {
+    try {
+        const { request, env } = context;
+        const providedKey = request.headers.get('x-admin-key');
+
+        // Check for the secret admin key you already set up
+        if (providedKey !== env.ADMIN_KEY) {
+            return new Response('Unauthorized', { status: 401 });
+        }
+        
+        await env.MBSERMON.delete('current_sermon');
+        
+        return new Response('Sermon cache cleared. The next visit will generate a new sermon.', { status: 200 });
+
+    } catch (error) {
+        console.error('Error during sermon deletion:', error);
+        return new Response('An error occurred while clearing the sermon cache.', { status: 500 });
+    }
+}
+
+
+/**
  * Calls the Gemini API to generate the sermon text.
- * @param {string} apiKey - The Gemini API key.
- * @returns {Promise<object>} - An object containing the sermon title, topic, and text.
  */
 async function generateSermon(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
-    // This prompt is designed to create a full-length sermon
     const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references.
     
     Generate a full, expositional sermon of approximately 2,500 words. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection.
@@ -86,5 +154,27 @@ async function generateSermon(apiKey) {
         throw new Error('No valid sermon text returned from Gemini.');
     }
 
-    return JSON.parse(sermonText);
+    const sermonData = JSON.parse(sermonText);
+    // Add the creation timestamp to the sermon object
+    sermonData.createdAt = new Date().toISOString();
+    return sermonData;
 }
+```
+
+### How to Manually Force a New Sermon
+
+After you deploy this updated function, you can force the cache to clear at any time.
+
+1.  Open your website's sermon page.
+2.  Open the developer console (usually `F12` or `Ctrl+Shift+I`).
+3.  Paste the following code into the console, replacing `'YourSecretKeyGoesHere'` with the `ADMIN_KEY` you already have saved in your Cloudflare environment variables.
+
+    ```javascript
+    fetch('/api/sermon', {
+        method: 'DELETE',
+        headers: {
+            'x-admin-key': 'YourSecretKeyGoesHere' 
+        }
+    }).then(res => res.text()).then(console.log);
+    
+
