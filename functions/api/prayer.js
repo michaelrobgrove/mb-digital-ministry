@@ -7,8 +7,6 @@
  * - MBPRAY_LOGS: The KV namespace for internal moderation logs.
  */
 
-// onRequest and handleGetRequest functions remain the same...
-
 export async function onRequest(context) {
     if (context.request.method === 'GET') {
         return handleGetRequest(context);
@@ -36,11 +34,6 @@ async function handleGetRequest(context) {
     }
 }
 
-
-/**
- * Handles submitting, moderating, and storing a new prayer request.
- * NOW INCLUDES PERSISTENT LOGGING TO A SEPARATE KV NAMESPACE.
- */
 async function handlePostRequest(context) {
     try {
         const { request, env, waitUntil } = context;
@@ -52,22 +45,17 @@ async function handlePostRequest(context) {
 
         const moderationResult = await moderateWithGemini(requestText, env.GEMINI_API_KEY);
 
-        // --- NEW LOGGING LOGIC ---
         const logEntry = {
             timestamp: new Date().toISOString(),
             firstName: firstName,
             requestText: requestText,
-            moderationStatus: moderationResult, // 'APPROVE' or 'REJECT'
-            ip: request.headers.get('CF-Connecting-IP') || 'N/A', // Log user IP
+            moderationStatus: moderationResult,
+            ip: request.headers.get('CF-Connecting-IP') || 'N/A',
         };
         
-        // Create a unique, time-based key for the log
         const logKey = `log:${logEntry.timestamp}:${crypto.randomUUID()}`;
         
-        // Use waitUntil to perform the logging without slowing down the user's response
         waitUntil(env.MBPRAY_LOGS.put(logKey, JSON.stringify(logEntry)));
-        // --- END OF LOGGING LOGIC ---
-
 
         if (moderationResult === 'APPROVE') {
             const prayerId = crypto.randomUUID();
@@ -90,10 +78,10 @@ async function handlePostRequest(context) {
     }
 }
 
-
-// moderateWithGemini function remains the same...
 async function moderateWithGemini(text, apiKey) {
+    // --- CORRECTED MODEL ENDPOINT ---
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    
     const prompt = `You are a content moderator for a Christian church's public prayer wall. Analyze the following prayer request. Determine if it is spam, contains inappropriate content (profanity, hate speech, violence), or includes sensitive personal identifiable information (like last names, addresses, phone numbers, emails). Respond with only a single word: APPROVE if the request is a genuine, safe-for-public prayer request. Respond with only a single word: REJECT if it violates any of the rules. Prayer Request: "${text}"`;
     try {
         const response = await fetch(GEMINI_URL, {
@@ -109,6 +97,13 @@ async function moderateWithGemini(text, apiKey) {
             return 'REJECT';
         }
         const data = await response.json();
+        
+        // Add safety check for empty or missing candidates array
+        if (!data.candidates || data.candidates.length === 0) {
+            console.error('Gemini API Error: No candidates returned. The prompt may have been blocked for safety reasons.');
+            return 'REJECT';
+        }
+
         const result = data.candidates[0].content.parts[0].text.trim().toUpperCase();
         return result === 'APPROVE' ? 'APPROVE' : 'REJECT';
     } catch (error) {
@@ -116,3 +111,4 @@ async function moderateWithGemini(text, apiKey) {
         return 'REJECT';
     }
 }
+
