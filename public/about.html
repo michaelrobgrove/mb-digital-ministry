@@ -1,31 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About | Pastor AIden</title>
-  <link rel="stylesheet" href="css/custom.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Maryland Baptist Digital Ministry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
-  <header>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="sermons.html">Sermons</a>
-      <a href="devotional.html">Devotional</a>
-      <a href="prayer.html">Prayer</a>
-      <a href="testimonies.html">Testimonies</a>
-      <a href="giving.html">Giving</a>
-      <a href="pastor-aiden.html">Pastor AIden</a>
-    </nav>
-    <div class="hero">
-      <img src="assets/logo.svg" alt="Pastor AIden Logo">
-    </div>
-  </header>
+<body class="bg-gray-50">
 
-  <main>
-    <h1>About Pastor AIden</h1>
-    <p>Pastor AIden is a digital pastor built to spread love, faith, and hope in the modern age — offering messages inspired by scripture and compassion, available to anyone, anywhere.</p>
-  </main>
+    <header class="hero-gradient text-white relative">
+        <div class="absolute top-0 right-0 p-6 z-20">
+            <button id="mobile-menu-btn" class="md:hidden text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+            <nav class="header-nav pt-4 pb-10">
+                <a href="/">Home</a>
+                <a href="/pastor-aiden.html">Ask Pastor AIden</a>
+                <a href="/devotional.html">Daily Devotional</a>
+                <a href="/prayer.html">Prayer Requests</a>
+                <a href="/about.html" class="active">About</a>
+                <a href="/giving.html">Give</a>
+            </nav>
+
+            <div class="mb-8">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert">
+                </a>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">About Our Ministry</h1>
+            <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans">Committed to the authority of Scripture and the historic beliefs of the Southern Baptist tradition.</p>
+        </div>
+    </header>
+
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
+        <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
+            <a href="/" class="hover:text-accent-gold">Home</a>
+            <a href="/pastor-aiden.html" class="hover:text-accent-gold">Ask Pastor AIden</a>
+            <a href="/devotional.html" class="hover:text-accent-gold">Daily Devotional</a>
+            <a href="/prayer.html" class="hover:text-accent-gold">Prayer Requests</a>
+            <a href="/about.html" class="hover:text-accent-gold">About</a>
+            <a href="/giving.html" class="hover:text-accent-gold">Give</a>
+        </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        
+        <section class="mb-16">
+            <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Our Mission</h2>
+                <div class="prose max-w-none">
+                    <p>The mission of Maryland Baptist Digital Ministry is to glorify God by reaching the world with the gospel of Jesus Christ. We are dedicated to providing accessible, biblically-sound resources that encourage spiritual growth, foster a Christ-centered community online, and equip believers to live out their faith with conviction and compassion.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Our Beliefs</h2>
+                <div class="prose max-w-none space-y-4">
+                    <p><strong>The Scriptures:</strong> We believe the Holy Bible, consisting of the 66 books of the Old and New Testaments, is the inspired, inerrant, and infallible Word of God. It is the final authority for all matters of faith and practice.</p>
+                    <p><strong>God:</strong> We believe in one God, eternally existing in three persons: the Father, the Son (Jesus Christ), and the Holy Spirit. He is the Creator, Sustainer, and Ruler of all things.</p>
+                    <p><strong>Jesus Christ:</strong> We believe in the deity of our Lord Jesus Christ, in His virgin birth, in His sinless life, in His miracles, in His vicarious and atoning death through His shed blood, in His bodily resurrection, in His ascension to the right hand of the Father, and in His personal return in power and glory.</p>
+                    <p><strong>Salvation:</strong> We believe that salvation is by grace alone, through faith alone, in Christ alone. It is a free gift from God, not a result of any human works, and is received personally by repentance and faith in the Lord Jesus Christ.</p>
+                    <p><strong>The Church:</strong> We believe in the spiritual unity of believers in our Lord Jesus Christ, who are the body of Christ, the church. We are called to make disciples of all nations, baptizing them and teaching them to obey all that Christ has commanded.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="mb-16">
+            <div class="bg-blue-50 border-2 border-blue-100 rounded-xl shadow-lg p-8 md:p-12 text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Contact Us</h2>
+                <p class="text-gray-600 mb-6 max-w-xl mx-auto font-sans">Have a question or need to get in touch? We'd love to hear from you.</p>
+                <a href="mailto:pastor@marylandbaptist.org" class="inline-block bg-primary-blue text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-900 transition-colors">Email Us</a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white py-12 font-sans">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-12 mb-4 brightness-0 invert">
+                    <p class="text-gray-400">A digital ministry serving believers with biblical truth and compassion.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
+                        <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
+                        <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
+                        <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">About</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/about.html" class="text-gray-400 hover:text-white transition-colors">Our Beliefs</a></li>
+                        <li><a href="/about.html#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p class="mb-2">© 2025 Maryland Baptist Digital Ministry. All rights reserved.</p>
+                <p class="text-sm">Website designed and developed by 
+                    <a href="https://www.alfredwebdesign.com" target="_blank" rel="noopener noreferrer" class="text-accent-gold hover:underline">Alfred Web Design & Shirts</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
+        mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+    </script>
+
 </body>
 </html>

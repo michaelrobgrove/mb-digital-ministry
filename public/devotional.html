@@ -1,60 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Devotional | Pastor AIden</title>
-  <link href="css/custom.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Devotional - Maryland Baptist Digital Ministry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
-  <header>
-    <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="devotional.html" class="active">Daily Devotional</a></li>
-        <li><a href="prayer.html">Prayer Requests</a></li>
-        <li><a href="testimonies.html">Testimonies</a></li>
-        <li><a href="giving.html">Giving</a></li>
-        <li><a href="pastor-aiden.html">Ask Pastor AIden</a></li>
-      </ul>
-    </nav>
-    <div class="hero">
-      <img src="assets/logo.svg" alt="Pastor AIden Logo" class="hero-logo" />
-      <h1>Daily Devotionals</h1>
-      <p>Find peace, purpose, and wisdom in each day’s message.</p>
+<body class="bg-gray-50">
+
+    <header class="hero-gradient text-white relative">
+        <div class="absolute top-0 right-0 p-6 z-20">
+            <button id="mobile-menu-btn" class="md:hidden text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+            <nav class="header-nav pt-4 pb-10">
+                <a href="/">Home</a>
+                <a href="/pastor-aiden.html">Ask Pastor AIden</a>
+                <a href="/devotional.html" class="active">Daily Devotional</a>
+                <a href="/prayer.html">Prayer Requests</a>
+                <a href="/about.html">About</a>
+                <a href="/giving.html">Give</a>
+            </nav>
+
+            <div class="mb-8">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert">
+                </a>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">Daily Devotional</h1>
+            <p class="text-lg text-gray-100 font-sans" id="current-date">Loading...</p>
+        </div>
+    </header>
+
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
+        <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
+            <a href="/" class="hover:text-accent-gold">Home</a>
+            <a href="/pastor-aiden.html" class="hover:text-accent-gold">Ask Pastor AIden</a>
+            <a href="/devotional.html" class="hover:text-accent-gold">Daily Devotional</a>
+            <a href="/prayer.html" class="hover:text-accent-gold">Prayer Requests</a>
+            <a href="/about.html" class="hover:text-accent-gold">About</a>
+            <a href="/giving.html" class="hover:text-accent-gold">Give</a>
+        </div>
     </div>
-  </header>
 
-  <main>
-    <section class="devotional-intro">
-      <h2>Today’s Word</h2>
-      <p>Each morning, Pastor AIden shares a new devotional reflection inspired by scripture and guided by faith. Let today’s message bring light and encouragement to your heart.</p>
-    </section>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <article id="devotional-content" class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-12 prose max-w-none">
+            <div class="text-center font-sans">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-blue mb-4"></div>
+                <p class="text-gray-500 text-lg">Loading today's devotional...</p>
+            </div>
+        </article>
+    </main>
 
-    <section class="devotional-content">
-      <article>
-        <h3>“Faith Over Fear”</h3>
-        <p><em>Psalm 56:3 – “When I am afraid, I put my trust in you.”</em></p>
-        <p>When fear creeps in, remember that faith is not the absence of fear — it’s the choice to trust God despite it. Let your faith remind you that you are never alone, even in uncertainty.</p>
-      </article>
-    </section>
+    <footer class="bg-gray-800 text-white py-12 font-sans">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-12 mb-4 brightness-0 invert">
+                    <p class="text-gray-400">A digital ministry serving believers with biblical truth and compassion.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
+                        <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
+                        <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
+                        <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">About</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/about.html" class="text-gray-400 hover:text-white transition-colors">Our Beliefs</a></li>
+                        <li><a href="/about.html#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p class="mb-2">© 2025 Maryland Baptist Digital Ministry. All rights reserved.</p>
+                <p class="text-sm">Website designed and developed by 
+                    <a href="https://www.alfredwebdesign.com" target="_blank" rel="noopener noreferrer" class="text-accent-gold hover:underline">Alfred Web Design & Shirts</a>
+                </p>
+            </div>
+        </div>
+    </footer>
 
-    <section class="subscribe">
-      <h2>Stay Connected</h2>
-      <p>Sign up to receive daily devotionals directly in your inbox.</p>
-      <form>
-        <input type="email" placeholder="Your email address" required />
-        <button type="submit">Subscribe</button>
-      </form>
-    </section>
-  </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
+        mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+    <script src="/js/main.js"></script>
 
-  <footer>
-    <p>&copy; 2025 MB Digital Ministry | Guided by Pastor AIden</p>
-    <nav class="footer-nav">
-      <a href="index.html">Home</a> |
-      <a href="devotional.html" class="active">Devotional</a> |
-      <a href="prayer.html">Prayer</a> |
-      <a href="testimonies.html">Testimonies</a> |
-      <a href="giving.html
+</body>
+</html>
