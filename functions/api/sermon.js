@@ -1,13 +1,21 @@
 /**
- * Cloudflare Function to generate and serve the weekly sermon text and audio.
- * Caches the sermon and regenerates it after 8:45 AM ET on Sundays.
+ * Cloudflare Function to generate and serve an archive of weekly sermons.
+ * Keeps a rolling 2-month archive of sermons.
  *
  * Required Environment Variables:
  * - ADMIN_KEY: A secret key to authorize manual cache deletion.
  * - GEMINI_API_KEY: Your API key for the Google Gemini API.
  * - ELEVENLABS_API_KEY: Your API key for ElevenLabs TTS service.
- * - MBSERMON: The KV namespace for storing the weekly sermon.
+ * - MBSERMON: The KV namespace for storing the sermon archive.
  */
+
+function getSundayKey(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day;
+    const sunday = new Date(d.setDate(diff));
+    return `sermon:${sunday.toISOString().split('T')[0]}`;
+}
 
 function getMostRecentSunday845AMET() {
     const now = new Date();
@@ -35,37 +43,48 @@ export async function onRequest(context) {
 
 async function handleGetRequest(context) {
     try {
-        const { env } = context;
-        const CACHE_KEY = 'current_sermon_with_audio';
+        const { env, waitUntil } = context;
 
-        const cachedSermon = await env.MBSERMON.get(CACHE_KEY, { type: 'json' });
+        // 1. Fetch all existing sermon keys
+        const list = await env.MBSERMON.list({ prefix: 'sermon:' });
+        const sermonPromises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
+        const allSermons = (await Promise.all(sermonPromises)).filter(Boolean);
+        
+        // 2. Sort sermons with the newest first
+        allSermons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        if (cachedSermon) {
-            const releaseTime = getMostRecentSunday845AMET();
-            const sermonTimestamp = new Date(cachedSermon.createdAt);
-            if (sermonTimestamp >= releaseTime) {
-                return new Response(JSON.stringify(cachedSermon), {
-                    headers: { 'Content-Type': 'application/json' },
-                });
-            }
+        // 3. Check if the current week's sermon needs to be generated
+        const releaseTime = getMostRecentSunday845AMET();
+        const currentSermonKey = getSundayKey(releaseTime);
+        const currentSermonExists = allSermons.some(sermon => sermon.id === currentSermonKey);
+        
+        const now = new Date();
+        const nowET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+
+        if (!currentSermonExists && nowET >= releaseTime) {
+             // If it's after the release time and the sermon doesn't exist, generate it in the background.
+             waitUntil(generateAndCacheSermon(env, currentSermonKey));
         }
 
-        const newSermon = await generateSermonAndAudio(env.GEMINI_API_KEY, env.ELEVENLABS_API_KEY);
-
-        context.waitUntil(
-            env.MBSERMON.put(CACHE_KEY, JSON.stringify(newSermon), {
-                expirationTtl: 691200, // 8 days
-            })
-        );
-        
-        return new Response(JSON.stringify(newSermon), {
+        // 4. Return all found sermons
+        return new Response(JSON.stringify(allSermons), {
             headers: { 'Content-Type': 'application/json' },
         });
 
     } catch (error) {
         console.error("Error in sermon function:", error);
-        return new Response('Failed to generate sermon.', { status: 500 });
+        return new Response('Failed to load sermons.', { status: 500 });
     }
+}
+
+async function generateAndCacheSermon(env, cacheKey) {
+    const newSermon = await generateSermonAndAudio(env.GEMINI_API_KEY, env.ELEVENLABS_API_KEY);
+    newSermon.id = cacheKey; // Use the date-based key as the ID
+    await env.MBSERMON.put(cacheKey, JSON.stringify(newSermon), {
+        // Expire sermons after ~65 days
+        expirationTtl: 5616000, 
+    });
+    return newSermon;
 }
 
 async function handleDeleteRequest(context) {
@@ -75,22 +94,21 @@ async function handleDeleteRequest(context) {
         if (providedKey !== env.ADMIN_KEY) {
             return new Response('Unauthorized', { status: 401 });
         }
-        await env.MBSERMON.delete('current_sermon_with_audio');
-        return new Response('Sermon cache cleared. The next visit will generate a new sermon.', { status: 200 });
+        
+        const list = await env.MBSERMON.list({ prefix: 'sermon:' });
+        const keysToDelete = list.keys.map(key => key.name);
+        await Promise.all(keysToDelete.map(key => env.MBSERMON.delete(key)));
+
+        return new Response(`Sermon archive cleared. ${keysToDelete.length} sermons deleted.`, { status: 200 });
     } catch (error) {
         console.error('Error during sermon deletion:', error);
-        return new Response('An error occurred while clearing the sermon cache.', { status: 500 });
+        return new Response('An error occurred while clearing the sermon archive.', { status: 500 });
     }
 }
 
 async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
-    // Step 1: Generate Sermon Text with Gemini
     const sermonTextData = await generateSermonText(geminiApiKey);
-
-    // Step 2: Generate Audio with ElevenLabs
     const audioBase64 = await generateAudio(sermonTextData.text, elevenLabsApiKey);
-
-    // Step 3: Combine and return
     return {
         ...sermonTextData,
         audioData: audioBase64,
@@ -122,7 +140,6 @@ async function generateSermonText(apiKey) {
 }
 
 async function generateAudio(text, apiKey) {
-    // A popular, deep male voice suitable for sermons. Find more voice IDs in your ElevenLabs dashboard.
     const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; 
     const ELEVENLABS_URL = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
 
@@ -133,7 +150,7 @@ async function generateAudio(text, apiKey) {
             'xi-api-key': apiKey,
         },
         body: JSON.stringify({
-            text: text,
+            text: text.substring(0, 4900), // ElevenLabs has a ~5000 character limit per request
             model_id: 'eleven_multilingual_v2',
             voice_settings: {
                 stability: 0.5,
@@ -144,7 +161,6 @@ async function generateAudio(text, apiKey) {
 
     if (!response.ok) throw new Error(`ElevenLabs API Error: ${await response.text()}`);
     
-    // Convert the audio blob to a base64 string for JSON storage
     const audioArrayBuffer = await response.arrayBuffer();
     const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
     return audioBase64;
