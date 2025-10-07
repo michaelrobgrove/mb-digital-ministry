@@ -93,7 +93,7 @@ async function handlePostRequest(context) {
 
 // moderateWithGemini function remains the same...
 async function moderateWithGemini(text, apiKey) {
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${apiKey}`;
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const prompt = `You are a content moderator for a Christian church's public prayer wall. Analyze the following prayer request. Determine if it is spam, contains inappropriate content (profanity, hate speech, violence), or includes sensitive personal identifiable information (like last names, addresses, phone numbers, emails). Respond with only a single word: APPROVE if the request is a genuine, safe-for-public prayer request. Respond with only a single word: REJECT if it violates any of the rules. Prayer Request: "${text}"`;
     try {
         const response = await fetch(GEMINI_URL, {
