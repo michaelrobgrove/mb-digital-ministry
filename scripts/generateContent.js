@@ -37,7 +37,7 @@ async function main() {
     try {
         await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
-        for (let i = 0; i < DAYS_TO_GENERATE; i++) {
+        for (let i = -1; i < DAYS_TO_GENERATE; i++) {
             const date = new Date();
             date.setDate(date.getDate() + i);
             const dateString = date.toISOString().split('T')[0];
