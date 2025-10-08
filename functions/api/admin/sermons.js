@@ -2,7 +2,7 @@
  * File Path: /functions/api/admin/sermons.js
  * Handles: 
  * - GET /api/admin/sermons - List all sermons
- * - DELETE /api/admin/sermons - Delete sermon (path handled separately)
+ * - DELETE /api/admin/sermons/[id] - Delete sermon
  */
 
 const textEncoder = new TextEncoder();
@@ -39,7 +39,7 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
         status: 405,
         headers: { 'Content-Type': 'application/json' }
-    });
+        });
 }
 
 async function listSermons(env) { 
