@@ -6,6 +6,7 @@
     <title>Daily Devotional - Maryland Baptist Digital Ministry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-gray-50">
 
@@ -58,6 +59,20 @@
                 <p class="text-gray-500 text-lg">Loading today's devotional...</p>
             </div>
         </article>
+
+        <!-- Text-to-Speech Controls (will be shown after content loads) -->
+        <div id="tts-controls" class="hidden mb-8 flex flex-wrap gap-4 items-center justify-center bg-white rounded-xl shadow-lg p-6">
+            <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
+                <i class="fas fa-play"></i> Listen to Devotional
+            </button>
+            <button id="tts-pause-btn" class="hidden bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center gap-2">
+                <i class="fas fa-pause"></i> Pause
+            </button>
+            <button id="tts-stop-btn" class="hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
+                <i class="fas fa-stop"></i> Stop
+            </button>
+            <div id="tts-status" class="text-gray-600 font-sans text-sm"></div>
+        </div>
     </main>
 
     <footer class="bg-gray-800 text-white py-12 font-sans">
@@ -96,13 +111,115 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script>
+        // Mobile menu
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
+        
+        // Date display
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
+
+        // --- TEXT-TO-SPEECH FUNCTIONALITY ---
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPaused = false;
+        let devotionalTextContent = '';
+
+        const ttsControls = document.getElementById('tts-controls');
+        const ttsPlayBtn = document.getElementById('tts-play-btn');
+        const ttsPauseBtn = document.getElementById('tts-pause-btn');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+        const ttsStatus = document.getElementById('tts-status');
+
+        function updateTTSButtons(state) {
+            ttsPlayBtn.classList.add('hidden');
+            ttsPauseBtn.classList.add('hidden');
+            ttsStopBtn.classList.add('hidden');
+            
+            if (state === 'playing') {
+                ttsPauseBtn.classList.remove('hidden');
+                ttsStopBtn.classList.remove('hidden');
+                ttsStatus.textContent = 'Speaking...';
+            } else if (state === 'paused') {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                ttsStopBtn.classList.remove('hidden');
+                ttsStatus.textContent = 'Paused';
+            } else {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Listen to Devotional';
+                ttsStatus.textContent = '';
+            }
+        }
+
+        ttsPlayBtn.addEventListener('click', () => {
+            if (isPaused && currentUtterance) {
+                speechSynthesis.resume();
+                isPaused = false;
+                updateTTSButtons('playing');
+            } else {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
+                
+                currentUtterance = new SpeechSynthesisUtterance(devotionalTextContent);
+                
+                // Get available voices and prefer a natural-sounding one
+                const voices = speechSynthesis.getVoices();
+                const preferredVoice = voices.find(voice => 
+                    voice.name.includes('Natural') || 
+                    voice.name.includes('Premium') ||
+                    voice.name.includes('Google') ||
+                    voice.name.includes('Microsoft')
+                ) || voices[0];
+                
+                if (preferredVoice) {
+                    currentUtterance.voice = preferredVoice;
+                }
+                
+                currentUtterance.rate = 0.9;
+                currentUtterance.pitch = 1.0;
+                currentUtterance.volume = 1.0;
+                
+                currentUtterance.onend = () => {
+                    updateTTSButtons('stopped');
+                    isPaused = false;
+                };
+                
+                currentUtterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event);
+                    ttsStatus.textContent = 'Error occurred';
+                    updateTTSButtons('stopped');
+                };
+                
+                speechSynthesis.speak(currentUtterance);
+                updateTTSButtons('playing');
+            }
+        });
+
+        ttsPauseBtn.addEventListener('click', () => {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.pause();
+                isPaused = true;
+                updateTTSButtons('paused');
+            }
+        });
+
+        ttsStopBtn.addEventListener('click', () => {
+            speechSynthesis.cancel();
+            isPaused = false;
+            updateTTSButtons('stopped');
+        });
+
+        // Load voices when available
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
     </script>
     <script src="/js/main.js"></script>
 

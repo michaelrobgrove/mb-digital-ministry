@@ -31,14 +31,22 @@
                 <a href="/"><img src="/assets/logo.svg" alt="Maryland Baptist Digital Ministry Logo" class="h-28 md:h-36 mx-auto brightness-0 invert"></a>
             </div>
             <h1 class="text-4xl md:text-5xl font-bold mb-3">Sermon Archive</h1>
-            <!-- UPDATED: Generic Subtitle -->
             <p class="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto font-sans" id="sermon-topic">Exploring God's Word, Together.</p>
         </div>
     </header>
 
     <!-- Mobile Menu Panel -->
     <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
-        <!-- Mobile nav links... -->
+        <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
+            <a href="/" class="hover:text-accent-gold">Home</a>
+            <a href="/pastor-aiden.html" class="hover:text-accent-gold">Ask Pastor AIden</a>
+            <a href="/devotional.html" class="hover:text-accent-gold">Daily Devotional</a>
+            <a href="/prayer.html" class="hover:text-accent-gold">Prayer Requests</a>
+            <a href="/sermon.html" class="hover:text-accent-gold">Weekly Sermon</a>
+            <a href="/about.html" class="hover:text-accent-gold">About</a>
+            <a href="/giving.html" class="hover:text-accent-gold">Give</a>
+        </div>
     </div>
 
     <!-- Main Content -->
@@ -54,6 +62,21 @@
                 </div>
                 <div id="sermon-content" class="hidden">
                     <h3 id="sermon-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6"></h3>
+                    
+                    <!-- Text-to-Speech Controls -->
+                    <div class="mb-8 flex flex-wrap gap-4 items-center justify-center">
+                        <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
+                            <i class="fas fa-play"></i> Listen to Sermon
+                        </button>
+                        <button id="tts-pause-btn" class="hidden bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button id="tts-stop-btn" class="hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <div id="tts-status" class="text-gray-600 font-sans text-sm"></div>
+                    </div>
+                    
                     <div id="audio-player-container" class="hidden mb-8 p-4 bg-gray-100 rounded-lg border sticky top-4 z-10">
                         <audio id="sermon-audio-player" controls class="w-full"></audio>
                     </div>
@@ -74,7 +97,37 @@
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 font-sans">
-        <!-- Your standard footer HTML here -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <img src="/assets/logo.svg" alt="Maryland Baptist" class="h-12 mb-4 brightness-0 invert">
+                    <p class="text-gray-400">A digital ministry serving believers with biblical truth and compassion.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/pastor-aiden.html" class="text-gray-400 hover:text-white transition-colors">Ask Pastor AIden</a></li>
+                        <li><a href="/devotional.html" class="text-gray-400 hover:text-white transition-colors">Daily Devotional</a></li>
+                        <li><a href="/prayer.html" class="text-gray-400 hover:text-white transition-colors">Prayer Requests</a></li>
+                        <li><a href="/sermon.html" class="text-gray-400 hover:text-white transition-colors">Weekly Sermon</a></li>
+                        <li><a href="/giving.html" class="text-gray-400 hover:text-white transition-colors">Give</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">About</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/about.html" class="text-gray-400 hover:text-white transition-colors">Our Beliefs</a></li>
+                        <li><a href="/about.html#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p class="mb-2">© 2025 Maryland Baptist Digital Ministry. All rights reserved.</p>
+                <p class="text-sm">Website designed and developed by 
+                    <a href="https://www.alfredwebdesign.com" target="_blank" rel="noopener noreferrer" class="text-accent-gold hover:underline">Alfred Web Design & Shirts</a>
+                </p>
+            </div>
+        </div>
     </footer>
 
     <script>
@@ -85,6 +138,104 @@
         if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
+        // --- TEXT-TO-SPEECH FUNCTIONALITY ---
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPaused = false;
+        let sermonTextContent = '';
+
+        const ttsPlayBtn = document.getElementById('tts-play-btn');
+        const ttsPauseBtn = document.getElementById('tts-pause-btn');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+        const ttsStatus = document.getElementById('tts-status');
+
+        function updateTTSButtons(state) {
+            ttsPlayBtn.classList.add('hidden');
+            ttsPauseBtn.classList.add('hidden');
+            ttsStopBtn.classList.add('hidden');
+            
+            if (state === 'playing') {
+                ttsPauseBtn.classList.remove('hidden');
+                ttsStopBtn.classList.remove('hidden');
+                ttsStatus.textContent = 'Speaking...';
+            } else if (state === 'paused') {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                ttsStopBtn.classList.remove('hidden');
+                ttsStatus.textContent = 'Paused';
+            } else {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Listen to Sermon';
+                ttsStatus.textContent = '';
+            }
+        }
+
+        ttsPlayBtn.addEventListener('click', () => {
+            if (isPaused && currentUtterance) {
+                speechSynthesis.resume();
+                isPaused = false;
+                updateTTSButtons('playing');
+            } else {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
+                
+                currentUtterance = new SpeechSynthesisUtterance(sermonTextContent);
+                
+                // Get available voices and prefer a natural-sounding one
+                const voices = speechSynthesis.getVoices();
+                const preferredVoice = voices.find(voice => 
+                    voice.name.includes('Natural') || 
+                    voice.name.includes('Premium') ||
+                    voice.name.includes('Google') ||
+                    voice.name.includes('Microsoft')
+                ) || voices[0];
+                
+                if (preferredVoice) {
+                    currentUtterance.voice = preferredVoice;
+                }
+                
+                currentUtterance.rate = 0.9; // Slightly slower for better comprehension
+                currentUtterance.pitch = 1.0;
+                currentUtterance.volume = 1.0;
+                
+                currentUtterance.onend = () => {
+                    updateTTSButtons('stopped');
+                    isPaused = false;
+                };
+                
+                currentUtterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event);
+                    ttsStatus.textContent = 'Error occurred';
+                    updateTTSButtons('stopped');
+                };
+                
+                speechSynthesis.speak(currentUtterance);
+                updateTTSButtons('playing');
+            }
+        });
+
+        ttsPauseBtn.addEventListener('click', () => {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.pause();
+                isPaused = true;
+                updateTTSButtons('paused');
+            }
+        });
+
+        ttsStopBtn.addEventListener('click', () => {
+            speechSynthesis.cancel();
+            isPaused = false;
+            updateTTSButtons('stopped');
+        });
+
+        // Load voices when available
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+
         // --- SERMON ARCHIVE LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const loadingEl = document.getElementById('loading-sermon');
@@ -94,7 +245,6 @@
             
             let allSermons = [];
 
-            // Function to display a sermon in the featured player
             function displaySermon(sermon) {
                 const titleEl = document.getElementById('sermon-title');
                 const textEl = document.getElementById('sermon-text');
@@ -102,8 +252,17 @@
                 const audioPlayer = document.getElementById('sermon-audio-player');
 
                 titleEl.textContent = sermon.title;
-                sermonTopicEl.textContent = sermon.topic; // Update hero topic
+                sermonTopicEl.textContent = sermon.topic;
                 textEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
+                
+                // Store sermon text for TTS (strip HTML tags)
+                sermonTextContent = sermon.title + '. ' + sermon.text.replace(/\n\n/g, ' ');
+                
+                // Stop any ongoing speech when switching sermons
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                    updateTTSButtons('stopped');
+                }
                 
                 if (sermon.audioData) {
                     audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
@@ -114,8 +273,6 @@
                 
                 sermonContentEl.classList.remove('hidden');
                 loadingEl.classList.add('hidden');
-                // Optional: scroll to top when a new sermon is loaded
-                // window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             function createArchiveCard(sermon) {
@@ -133,6 +290,7 @@
 
                 card.addEventListener('click', () => {
                     displaySermon(sermon);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
 
                 return card;
@@ -169,4 +327,3 @@
     </script>
 </body>
 </html>
-

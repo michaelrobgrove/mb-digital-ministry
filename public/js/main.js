@@ -2,6 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const devotionalContent = document.getElementById('devotional-content');
+    const ttsControls = document.getElementById('tts-controls');
+    
     if (!devotionalContent) return;
 
     // Create a new showdown converter
@@ -28,6 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Convert markdown to HTML and display it
             const html = converter.makeHtml(markdown);
             devotionalContent.innerHTML = html;
+            
+            // Store plain text for TTS (strip HTML tags)
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            window.devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
+            
+            // Show TTS controls
+            if (ttsControls) {
+                ttsControls.classList.remove('hidden');
+            }
         })
         .catch(error => {
             console.error(error);
