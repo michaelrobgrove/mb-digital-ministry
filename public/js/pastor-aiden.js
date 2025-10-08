@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         responseContainer.classList.add('hidden');
 
         try {
-            const response = await fetch('/ask-pastor', {
+            const response = await fetch('/api/ask-pastor', {  // Added /api/ prefix
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
