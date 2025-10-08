@@ -110,7 +110,6 @@
         </div>
     </footer>
 
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script>
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -122,123 +121,102 @@
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
 
-        let devotionalTextContent = '';
-        let ttsInitialized = false;
+        // Web Speech API
+        const synth = window.speechSynthesis;
+        let utterance = null;
+        let isPaused = false;
+        let devotionalText = '';
 
         const ttsControls = document.getElementById('tts-controls');
-        const ttsPlayBtn = document.getElementById('tts-play-btn');
-        const ttsPauseBtn = document.getElementById('tts-pause-btn');
-        const ttsStopBtn = document.getElementById('tts-stop-btn');
-        const ttsStatus = document.getElementById('tts-status');
+        const playBtn = document.getElementById('tts-play-btn');
+        const pauseBtn = document.getElementById('tts-pause-btn');
+        const stopBtn = document.getElementById('tts-stop-btn');
+        const status = document.getElementById('tts-status');
 
-        function updateTTSButtons(state) {
-            ttsPlayBtn.classList.add('hidden');
-            ttsPauseBtn.classList.add('hidden');
-            ttsStopBtn.classList.add('hidden');
+        function updateUI(state) {
+            playBtn.classList.add('hidden');
+            pauseBtn.classList.add('hidden');
+            stopBtn.classList.add('hidden');
             
             if (state === 'playing') {
-                ttsPauseBtn.classList.remove('hidden');
-                ttsStopBtn.classList.remove('hidden');
-                ttsStatus.textContent = 'Speaking...';
+                pauseBtn.classList.remove('hidden');
+                stopBtn.classList.remove('hidden');
+                status.textContent = 'Speaking...';
             } else if (state === 'paused') {
-                ttsPlayBtn.classList.remove('hidden');
-                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
-                ttsStopBtn.classList.remove('hidden');
-                ttsStatus.textContent = 'Paused';
+                playBtn.classList.remove('hidden');
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                stopBtn.classList.remove('hidden');
+                status.textContent = 'Paused';
             } else {
-                ttsPlayBtn.classList.remove('hidden');
-                ttsPlayBtn.innerHTML = '<i class="fas fa-play"></i> Listen to Devotional';
-                ttsStatus.textContent = '';
+                playBtn.classList.remove('hidden');
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Listen to Devotional';
+                status.textContent = '';
             }
         }
 
-        function setupTTSHandlers() {
-            if (ttsInitialized) return;
-            
-            ttsPlayBtn.onclick = function() {
-                if (!devotionalTextContent) {
-                    alert('No content to read');
-                    return;
-                }
+        playBtn.onclick = () => {
+            if (isPaused) {
+                synth.resume();
+                isPaused = false;
+                updateUI('playing');
+            } else {
+                synth.cancel();
+                utterance = new SpeechSynthesisUtterance(devotionalText);
                 
-                if (responsiveVoice.isPlaying()) {
-                    responsiveVoice.resume();
-                    updateTTSButtons('playing');
-                } else {
-                    responsiveVoice.speak(devotionalTextContent, "US English Male", {
-                        rate: 0.9,
-                        pitch: 1,
-                        volume: 1,
-                        onstart: function() {
-                            updateTTSButtons('playing');
-                        },
-                        onend: function() {
-                            updateTTSButtons('stopped');
-                        },
-                        onerror: function(e) {
-                            console.error('TTS Error:', e);
-                            ttsStatus.textContent = 'Error occurred';
-                            updateTTSButtons('stopped');
-                        }
-                    });
-                }
-            };
-
-            ttsPauseBtn.onclick = function() {
-                responsiveVoice.pause();
-                updateTTSButtons('paused');
-            };
-
-            ttsStopBtn.onclick = function() {
-                responsiveVoice.cancel();
-                updateTTSButtons('stopped');
-            };
-            
-            ttsInitialized = true;
-        }
-
-        function waitForResponsiveVoice(callback) {
-            if (typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport()) {
-                callback();
-            } else {
-                setTimeout(function() { waitForResponsiveVoice(callback); }, 100);
+                const voices = synth.getVoices();
+                const englishVoice = voices.find(v => v.lang.startsWith('en-')) || voices[0];
+                if (englishVoice) utterance.voice = englishVoice;
+                
+                utterance.rate = 0.95;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                utterance.onend = () => updateUI('stopped');
+                utterance.onerror = () => {
+                    status.textContent = 'Error occurred';
+                    updateUI('stopped');
+                };
+                
+                synth.speak(utterance);
+                updateUI('playing');
             }
+        };
+
+        pauseBtn.onclick = () => {
+            synth.pause();
+            isPaused = true;
+            updateUI('paused');
+        };
+
+        stopBtn.onclick = () => {
+            synth.cancel();
+            isPaused = false;
+            updateUI('stopped');
+        };
+
+        // Load voices
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = () => synth.getVoices();
         }
 
+        // Load devotional
         const devotionalContent = document.getElementById('devotional-content');
         const converter = new showdown.Converter();
-
         const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateString = `${year}-${month}-${day}`;
+        const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
         fetch(`/devotionals/${dateString}.txt`)
-            .then(response => {
-                if (!response.ok) throw new Error('Devotional not found');
-                return response.text();
-            })
+            .then(r => r.ok ? r.text() : Promise.reject())
             .then(markdown => {
                 const html = converter.makeHtml(markdown);
                 devotionalContent.innerHTML = html;
-                
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
-                
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                devotionalText = temp.textContent || temp.innerText;
                 ttsControls.classList.remove('hidden');
-                
-                waitForResponsiveVoice(function() {
-                    setupTTSHandlers();
-                });
             })
-            .catch(error => {
-                console.error(error);
-                devotionalContent.innerHTML = `
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome</h2>
-                    <p class="text-gray-600">A new devotional for today is coming soon. Please check back later.</p>
-                `;
+            .catch(() => {
+                devotionalContent.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome</h2><p class="text-gray-600">A new devotional for today is coming soon. Please check back later.</p>';
             });
     </script>
 </body>
