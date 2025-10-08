@@ -1,13 +1,7 @@
 /**
  * Cloudflare Function to generate and serve an archive of weekly sermons.
  * Keeps a rolling 2-month archive of sermons.
- * Prioritizes text generation; audio is optional and fails gracefully.
- *
- * Required Environment Variables:
- * - ADMIN_KEY: A secret key to authorize manual cache deletion.
- * - GEMINI_API_KEY: Your API key for the Google Gemini API.
- * - ELEVENLABS_API_KEY: Your API key for ElevenLabs TTS service.
- * - MBSERMON: The KV namespace for storing the sermon archive.
+ * DEBUG VERSION with better error handling
  */
 
 function getSundayKey(date) {
@@ -20,7 +14,6 @@ function getSundayKey(date) {
 
 function getMostRecentSunday845AMET() {
     const now = new Date();
-    // EDT is UTC-4. The offset is in minutes.
     const edtOffset = -4 * 60; 
     const nowInUTC = now.getTime() + (now.getTimezoneOffset() * 60000);
     const nowET = new Date(nowInUTC + (edtOffset * 60000));
@@ -41,27 +34,33 @@ function getMostRecentSunday845AMET() {
 
 export async function onRequest(context) {
     const { request } = context;
+    
+    console.log("Sermon endpoint called, method:", request.method);
+    
     if (request.method === 'GET') {
         return handleGetRequest(context);
     }
     if (request.method === 'DELETE') {
         return handleDeleteRequest(context);
     }
-    return new Response('Invalid request method.', { status: 405 });
+    return new Response(JSON.stringify({ error: 'Invalid request method' }), { 
+        status: 405,
+        headers: { 'Content-Type': 'application/json' }
+    });
 }
 
 async function handleGetRequest(context) {
     try {
         const { env, waitUntil } = context;
         
-        console.log("Function invoked. Attempting to fetch sermon list.");
+        console.log("Fetching sermon list from KV...");
         const list = await env.MBSERMON.list({ prefix: 'sermon:' });
-        console.log(`Found ${list.keys.length} sermon keys in KV.`);
+        console.log(`Found ${list.keys.length} sermon keys in KV:`, list.keys.map(k => k.name));
 
         if (list.keys.length === 0) {
             console.log("No sermons exist. Triggering initial synchronous generation.");
             const firstSermon = await generateAndCacheSermon(env);
-            console.log("Initial sermon generated and cached.");
+            console.log("Initial sermon generated:", firstSermon.id);
             return new Response(JSON.stringify([firstSermon]), {
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -70,6 +69,8 @@ async function handleGetRequest(context) {
         const sermonPromises = list.keys.map(key => env.MBSERMON.get(key.name, { type: 'json' }));
         let allSermons = (await Promise.all(sermonPromises)).filter(Boolean);
         allSermons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        console.log(`Loaded ${allSermons.length} sermons successfully`);
 
         const latestSermon = allSermons[0];
         const releaseTime = getMostRecentSunday845AMET();
@@ -90,7 +91,14 @@ async function handleGetRequest(context) {
 
     } catch (error) {
         console.error("Critical error in handleGetRequest:", error);
-        return new Response('Failed to load sermons.', { status: 500 });
+        return new Response(JSON.stringify({ 
+            error: 'Failed to load sermons',
+            details: error.message,
+            stack: error.stack
+        }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -114,17 +122,31 @@ async function handleDeleteRequest(context) {
         const { request, env } = context;
         const providedKey = request.headers.get('x-admin-key');
         if (providedKey !== env.ADMIN_KEY) {
-            return new Response('Unauthorized', { status: 401 });
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
         
         const list = await env.MBSERMON.list({ prefix: 'sermon:' });
         const keysToDelete = list.keys.map(key => key.name);
         await Promise.all(keysToDelete.map(key => env.MBSERMON.delete(key)));
 
-        return new Response(`Sermon archive cleared. ${keysToDelete.length} sermons deleted.`, { status: 200 });
+        return new Response(JSON.stringify({ 
+            message: `Sermon archive cleared. ${keysToDelete.length} sermons deleted.`
+        }), { 
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } catch (error) {
         console.error('Error during sermon deletion:', error);
-        return new Response('An error occurred while clearing the sermon archive.', { status: 500 });
+        return new Response(JSON.stringify({ 
+            error: 'An error occurred while clearing the sermon archive.',
+            details: error.message
+        }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -148,7 +170,6 @@ async function generateSermonAndAudio(geminiApiKey, elevenLabsApiKey) {
 async function generateSermonText(apiKey) {
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
-    // --- NEW: Dynamic Sermon Themes ---
     const sermonThemes = [
         "a key passage from the book of Romans",
         "a key passage from the Gospel of John",
@@ -208,4 +229,3 @@ async function generateAudio(text, apiKey) {
     const audioArrayBuffer = await response.arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
 }
-
