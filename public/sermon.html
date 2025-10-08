@@ -48,7 +48,6 @@
     </div>
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        
         <section id="featured-sermon-section">
             <h2 class="text-3xl font-bold text-gray-800 mb-4 text-center">This Week's Sermon</h2>
             <article id="featured-sermon-container" class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-16">
@@ -84,7 +83,6 @@
             <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center border-t pt-12">Sermon Archive</h2>
             <div id="archive-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
         </section>
-
     </main>
 
     <footer class="bg-gray-800 text-white py-12 font-sans">
@@ -130,6 +128,7 @@
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
         let sermonTextContent = '';
+        let ttsInitialized = false;
 
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
@@ -157,13 +156,15 @@
             }
         }
 
-        function initializeTTS() {
-            if (typeof responsiveVoice === 'undefined') {
-                setTimeout(initializeTTS, 100);
-                return;
-            }
-
-            ttsPlayBtn.addEventListener('click', () => {
+        function setupTTSHandlers() {
+            if (ttsInitialized) return;
+            
+            ttsPlayBtn.onclick = function() {
+                if (!sermonTextContent) {
+                    alert('No sermon content loaded');
+                    return;
+                }
+                
                 if (responsiveVoice.isPlaying()) {
                     responsiveVoice.resume();
                     updateTTSButtons('playing');
@@ -172,28 +173,43 @@
                         rate: 0.9,
                         pitch: 1,
                         volume: 1,
-                        onstart: () => updateTTSButtons('playing'),
-                        onend: () => updateTTSButtons('stopped'),
-                        onerror: () => {
+                        onstart: function() {
+                            updateTTSButtons('playing');
+                        },
+                        onend: function() {
+                            updateTTSButtons('stopped');
+                        },
+                        onerror: function(e) {
+                            console.error('TTS Error:', e);
                             ttsStatus.textContent = 'Error occurred';
                             updateTTSButtons('stopped');
                         }
                     });
                 }
-            });
+            };
 
-            ttsPauseBtn.addEventListener('click', () => {
+            ttsPauseBtn.onclick = function() {
                 responsiveVoice.pause();
                 updateTTSButtons('paused');
-            });
+            };
 
-            ttsStopBtn.addEventListener('click', () => {
+            ttsStopBtn.onclick = function() {
                 responsiveVoice.cancel();
                 updateTTSButtons('stopped');
-            });
+            };
+            
+            ttsInitialized = true;
         }
 
-        initializeTTS();
+        function waitForResponsiveVoice(callback) {
+            if (typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport()) {
+                callback();
+            } else {
+                setTimeout(function() { waitForResponsiveVoice(callback); }, 100);
+            }
+        }
+
+        waitForResponsiveVoice(setupTTSHandlers);
 
         const loadingEl = document.getElementById('loading-sermon');
         const sermonContentEl = document.getElementById('sermon-content');
@@ -243,7 +259,7 @@
                 <p class="text-gray-600 font-sans">${snippet}</p>
             `;
 
-            card.addEventListener('click', () => {
+            card.addEventListener('click', function() {
                 displaySermon(sermon);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
@@ -251,20 +267,13 @@
             return card;
         }
 
-        async function loadSermons() {
-            try {
-                console.log('Fetching sermons from /api/sermon');
-                const response = await fetch('/api/sermon');
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Error response:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
-                
-                allSermons = await response.json();
-                console.log('Sermons loaded:', allSermons.length);
+        fetch('/api/sermon')
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load sermons');
+                return response.json();
+            })
+            .then(sermons => {
+                allSermons = sermons;
                 
                 if (allSermons.length > 0) {
                     displaySermon(allSermons[0]);
@@ -273,8 +282,7 @@
                     archiveGridEl.innerHTML = '';
                     if(archivedSermons.length > 0) {
                         archivedSermons.forEach(sermon => {
-                            const card = createArchiveCard(sermon);
-                            archiveGridEl.appendChild(card);
+                            archiveGridEl.appendChild(createArchiveCard(sermon));
                         });
                     } else {
                         archiveGridEl.innerHTML = '<p class="text-center text-gray-500 md:col-span-2">No older sermons in the archive yet.</p>'
@@ -282,14 +290,11 @@
                 } else {
                     loadingEl.innerHTML = '<p class="text-gray-600">The first sermon is being generated. Please refresh the page in a moment.</p>';
                 }
-
-            } catch (error) {
-                console.error('Error loading sermons:', error);
-                loadingEl.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
-            }
-        }
-
-        loadSermons();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loadingEl.innerHTML = '<p class="text-red-600">Could not load sermons. Please try again later.</p>';
+            });
     </script>
 </body>
 </html>

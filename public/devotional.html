@@ -54,7 +54,6 @@
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <article class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-8">
-            <!-- Text-to-Speech Controls (at top, hidden until loaded) -->
             <div id="tts-controls" class="hidden mb-8 flex flex-wrap gap-4 items-center justify-center pb-6 border-b">
                 <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
                     <i class="fas fa-play"></i> Listen to Devotional
@@ -114,28 +113,24 @@
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script>
-        // Mobile menu
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
         
-        // Date display
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
 
-        // --- GLOBAL VARIABLES ---
         let devotionalTextContent = '';
+        let ttsInitialized = false;
 
-        // --- TTS ELEMENTS ---
         const ttsControls = document.getElementById('tts-controls');
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
         const ttsStopBtn = document.getElementById('tts-stop-btn');
         const ttsStatus = document.getElementById('tts-status');
 
-        // --- TTS FUNCTIONS ---
         function updateTTSButtons(state) {
             ttsPlayBtn.classList.add('hidden');
             ttsPauseBtn.classList.add('hidden');
@@ -157,55 +152,59 @@
             }
         }
 
-        // --- WAIT FOR RESPONSIVEVOICE TO LOAD ---
-        function initializeTTS() {
-            if (typeof responsiveVoice === 'undefined') {
-                setTimeout(initializeTTS, 100);
-                return;
-            }
-
-            ttsPlayBtn.addEventListener('click', () => {
-                console.log('Play button clicked');
+        function setupTTSHandlers() {
+            if (ttsInitialized) return;
+            
+            ttsPlayBtn.onclick = function() {
+                if (!devotionalTextContent) {
+                    alert('No content to read');
+                    return;
+                }
+                
                 if (responsiveVoice.isPlaying()) {
                     responsiveVoice.resume();
                     updateTTSButtons('playing');
                 } else {
-                    console.log('Starting speech with text length:', devotionalTextContent.length);
                     responsiveVoice.speak(devotionalTextContent, "US English Male", {
                         rate: 0.9,
                         pitch: 1,
                         volume: 1,
-                        onstart: () => {
-                            console.log('Speech started');
+                        onstart: function() {
                             updateTTSButtons('playing');
                         },
-                        onend: () => {
-                            console.log('Speech ended');
+                        onend: function() {
                             updateTTSButtons('stopped');
                         },
-                        onerror: (err) => {
-                            console.error('Speech error:', err);
+                        onerror: function(e) {
+                            console.error('TTS Error:', e);
                             ttsStatus.textContent = 'Error occurred';
                             updateTTSButtons('stopped');
                         }
                     });
                 }
-            });
+            };
 
-            ttsPauseBtn.addEventListener('click', () => {
-                console.log('Pause clicked');
+            ttsPauseBtn.onclick = function() {
                 responsiveVoice.pause();
                 updateTTSButtons('paused');
-            });
+            };
 
-            ttsStopBtn.addEventListener('click', () => {
-                console.log('Stop clicked');
+            ttsStopBtn.onclick = function() {
                 responsiveVoice.cancel();
                 updateTTSButtons('stopped');
-            });
+            };
+            
+            ttsInitialized = true;
         }
 
-        // --- LOAD DEVOTIONAL ---
+        function waitForResponsiveVoice(callback) {
+            if (typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport()) {
+                callback();
+            } else {
+                setTimeout(function() { waitForResponsiveVoice(callback); }, 100);
+            }
+        }
+
         const devotionalContent = document.getElementById('devotional-content');
         const converter = new showdown.Converter();
 
@@ -215,30 +214,24 @@
         const day = String(today.getDate()).padStart(2, '0');
         const dateString = `${year}-${month}-${day}`;
 
-        const devotionalUrl = `/devotionals/${dateString}.txt`;
-
-        fetch(devotionalUrl)
+        fetch(`/devotionals/${dateString}.txt`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Devotional for today not found.');
-                }
+                if (!response.ok) throw new Error('Devotional not found');
                 return response.text();
             })
             .then(markdown => {
                 const html = converter.makeHtml(markdown);
                 devotionalContent.innerHTML = html;
                 
-                // Store plain text for TTS
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
                 devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
-                console.log('Devotional loaded, text length:', devotionalTextContent.length);
                 
-                // Show TTS controls
                 ttsControls.classList.remove('hidden');
                 
-                // Initialize TTS after content is loaded
-                initializeTTS();
+                waitForResponsiveVoice(function() {
+                    setupTTSHandlers();
+                });
             })
             .catch(error => {
                 console.error(error);
@@ -248,6 +241,5 @@
                 `;
             });
     </script>
-
 </body>
 </html>
