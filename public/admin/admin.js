@@ -127,9 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             generateSermonBtn.disabled = true;
             generateSermonBtn.textContent = 'Generating...';
-            await api('/sermons/generate', { method: 'POST' });
+            await api('/generate', { method: 'POST' });
             alert('New sermon generation started. It will appear in the list shortly.');
-            setTimeout(loadSermons, 3000); // Reload after 3 seconds
+            setTimeout(loadSermons, 3000);
         } catch (e) {
             alert('Failed to trigger generation: ' + e.message);
         } finally {
