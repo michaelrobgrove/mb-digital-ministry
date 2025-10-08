@@ -111,7 +111,6 @@
         </div>
     </footer>
 
-    <!-- ResponsiveVoice for better quality -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script>
@@ -126,16 +125,17 @@
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
 
-        // --- TEXT-TO-SPEECH WITH RESPONSIVEVOICE ---
+        // --- GLOBAL VARIABLES ---
         let devotionalTextContent = '';
-        let isPlaying = false;
 
+        // --- TTS ELEMENTS ---
         const ttsControls = document.getElementById('tts-controls');
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
         const ttsStopBtn = document.getElementById('tts-stop-btn');
         const ttsStatus = document.getElementById('tts-status');
 
+        // --- TTS FUNCTIONS ---
         function updateTTSButtons(state) {
             ttsPlayBtn.classList.add('hidden');
             ttsPauseBtn.classList.add('hidden');
@@ -157,84 +157,96 @@
             }
         }
 
-        ttsPlayBtn.addEventListener('click', () => {
-            if (responsiveVoice.isPlaying()) {
-                responsiveVoice.resume();
-                updateTTSButtons('playing');
-            } else {
-                responsiveVoice.speak(devotionalTextContent, "US English Male", {
-                    rate: 0.9,
-                    pitch: 1,
-                    volume: 1,
-                    onstart: () => {
-                        isPlaying = true;
-                        updateTTSButtons('playing');
-                    },
-                    onend: () => {
-                        isPlaying = false;
-                        updateTTSButtons('stopped');
-                    },
-                    onerror: () => {
-                        ttsStatus.textContent = 'Error occurred';
-                        updateTTSButtons('stopped');
-                    }
-                });
+        // --- WAIT FOR RESPONSIVEVOICE TO LOAD ---
+        function initializeTTS() {
+            if (typeof responsiveVoice === 'undefined') {
+                setTimeout(initializeTTS, 100);
+                return;
             }
-        });
 
-        ttsPauseBtn.addEventListener('click', () => {
-            responsiveVoice.pause();
-            updateTTSButtons('paused');
-        });
+            ttsPlayBtn.addEventListener('click', () => {
+                console.log('Play button clicked');
+                if (responsiveVoice.isPlaying()) {
+                    responsiveVoice.resume();
+                    updateTTSButtons('playing');
+                } else {
+                    console.log('Starting speech with text length:', devotionalTextContent.length);
+                    responsiveVoice.speak(devotionalTextContent, "US English Male", {
+                        rate: 0.9,
+                        pitch: 1,
+                        volume: 1,
+                        onstart: () => {
+                            console.log('Speech started');
+                            updateTTSButtons('playing');
+                        },
+                        onend: () => {
+                            console.log('Speech ended');
+                            updateTTSButtons('stopped');
+                        },
+                        onerror: (err) => {
+                            console.error('Speech error:', err);
+                            ttsStatus.textContent = 'Error occurred';
+                            updateTTSButtons('stopped');
+                        }
+                    });
+                }
+            });
 
-        ttsStopBtn.addEventListener('click', () => {
-            responsiveVoice.cancel();
-            isPlaying = false;
-            updateTTSButtons('stopped');
-        });
+            ttsPauseBtn.addEventListener('click', () => {
+                console.log('Pause clicked');
+                responsiveVoice.pause();
+                updateTTSButtons('paused');
+            });
+
+            ttsStopBtn.addEventListener('click', () => {
+                console.log('Stop clicked');
+                responsiveVoice.cancel();
+                updateTTSButtons('stopped');
+            });
+        }
 
         // --- LOAD DEVOTIONAL ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const devotionalContent = document.getElementById('devotional-content');
-            if (!devotionalContent) return;
+        const devotionalContent = document.getElementById('devotional-content');
+        const converter = new showdown.Converter();
 
-            const converter = new showdown.Converter();
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
 
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateString = `${year}-${month}-${day}`;
+        const devotionalUrl = `/devotionals/${dateString}.txt`;
 
-            const devotionalUrl = `/devotionals/${dateString}.txt`;
-
-            fetch(devotionalUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Devotional for today not found.');
-                    }
-                    return response.text();
-                })
-                .then(markdown => {
-                    const html = converter.makeHtml(markdown);
-                    devotionalContent.innerHTML = html;
-                    
-                    // Store plain text for TTS
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = html;
-                    devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
-                    
-                    // Show TTS controls
-                    ttsControls.classList.remove('hidden');
-                })
-                .catch(error => {
-                    console.error(error);
-                    devotionalContent.innerHTML = `
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome</h2>
-                        <p class="text-gray-600">A new devotional for today is coming soon. Please check back later.</p>
-                    `;
-                });
-        });
+        fetch(devotionalUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Devotional for today not found.');
+                }
+                return response.text();
+            })
+            .then(markdown => {
+                const html = converter.makeHtml(markdown);
+                devotionalContent.innerHTML = html;
+                
+                // Store plain text for TTS
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
+                console.log('Devotional loaded, text length:', devotionalTextContent.length);
+                
+                // Show TTS controls
+                ttsControls.classList.remove('hidden');
+                
+                // Initialize TTS after content is loaded
+                initializeTTS();
+            })
+            .catch(error => {
+                console.error(error);
+                devotionalContent.innerHTML = `
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome</h2>
+                    <p class="text-gray-600">A new devotional for today is coming soon. Please check back later.</p>
+                `;
+            });
     </script>
 
 </body>

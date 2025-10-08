@@ -10,7 +10,6 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- Header & Hero Section -->
     <header class="hero-gradient text-white relative">
         <div class="absolute top-0 right-0 p-6 z-20">
             <button id="mobile-menu-btn" class="md:hidden text-white">
@@ -35,7 +34,6 @@
         </div>
     </header>
 
-    <!-- Mobile Menu Panel -->
     <div id="mobile-menu" class="hidden fixed inset-0 bg-primary-blue/95 backdrop-blur-md z-50 p-8 text-white">
         <button id="mobile-menu-close-btn" class="absolute top-6 right-6"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         <div class="mt-16 flex flex-col items-center justify-center h-full space-y-6 text-2xl font-semibold">
@@ -49,10 +47,8 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         
-        <!-- Featured Sermon Section -->
         <section id="featured-sermon-section">
             <h2 class="text-3xl font-bold text-gray-800 mb-4 text-center">This Week's Sermon</h2>
             <article id="featured-sermon-container" class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-16">
@@ -63,7 +59,6 @@
                 <div id="sermon-content" class="hidden">
                     <h3 id="sermon-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6"></h3>
                     
-                    <!-- Text-to-Speech Controls -->
                     <div class="mb-8 flex flex-wrap gap-4 items-center justify-center">
                         <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
                             <i class="fas fa-play"></i> Listen to Sermon
@@ -85,17 +80,13 @@
             </article>
         </section>
 
-        <!-- Sermon Archive Section -->
         <section id="sermon-archive-section">
             <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center border-t pt-12">Sermon Archive</h2>
-            <div id="archive-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Archive items will be populated by JS -->
-            </div>
+            <div id="archive-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
         </section>
 
     </main>
 
-    <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 font-sans">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8 mb-8">
@@ -130,19 +121,15 @@
         </div>
     </footer>
 
-    <!-- ResponsiveVoice for better quality -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script>
-        // --- MOBILE MENU ---
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
-        // --- TEXT-TO-SPEECH WITH RESPONSIVEVOICE ---
         let sermonTextContent = '';
-        let isPlaying = false;
 
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
@@ -170,107 +157,114 @@
             }
         }
 
-        ttsPlayBtn.addEventListener('click', () => {
-            if (responsiveVoice.isPlaying()) {
-                responsiveVoice.resume();
-                updateTTSButtons('playing');
-            } else {
-                responsiveVoice.speak(sermonTextContent, "US English Male", {
-                    rate: 0.9,
-                    pitch: 1,
-                    volume: 1,
-                    onstart: () => {
-                        isPlaying = true;
-                        updateTTSButtons('playing');
-                    },
-                    onend: () => {
-                        isPlaying = false;
-                        updateTTSButtons('stopped');
-                    },
-                    onerror: () => {
-                        ttsStatus.textContent = 'Error occurred';
-                        updateTTSButtons('stopped');
-                    }
-                });
+        function initializeTTS() {
+            if (typeof responsiveVoice === 'undefined') {
+                setTimeout(initializeTTS, 100);
+                return;
             }
-        });
 
-        ttsPauseBtn.addEventListener('click', () => {
-            responsiveVoice.pause();
-            updateTTSButtons('paused');
-        });
-
-        ttsStopBtn.addEventListener('click', () => {
-            responsiveVoice.cancel();
-            isPlaying = false;
-            updateTTSButtons('stopped');
-        });
-
-        // --- SERMON ARCHIVE LOGIC ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            const loadingEl = document.getElementById('loading-sermon');
-            const sermonContentEl = document.getElementById('sermon-content');
-            const archiveGridEl = document.getElementById('archive-grid');
-            const sermonTopicEl = document.getElementById('sermon-topic');
-            
-            let allSermons = [];
-
-            function displaySermon(sermon) {
-                const titleEl = document.getElementById('sermon-title');
-                const textEl = document.getElementById('sermon-text');
-                const audioPlayerContainer = document.getElementById('audio-player-container');
-                const audioPlayer = document.getElementById('sermon-audio-player');
-
-                titleEl.textContent = sermon.title;
-                sermonTopicEl.textContent = sermon.topic;
-                textEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
-                
-                // Store sermon text for TTS (strip HTML tags)
-                sermonTextContent = sermon.title + '. ' + sermon.text.replace(/\n\n/g, ' ');
-                
-                // Stop any ongoing speech when switching sermons
+            ttsPlayBtn.addEventListener('click', () => {
                 if (responsiveVoice.isPlaying()) {
-                    responsiveVoice.cancel();
-                    updateTTSButtons('stopped');
-                }
-                
-                if (sermon.audioData) {
-                    audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
-                    audioPlayerContainer.classList.remove('hidden');
+                    responsiveVoice.resume();
+                    updateTTSButtons('playing');
                 } else {
-                    audioPlayerContainer.classList.add('hidden');
+                    responsiveVoice.speak(sermonTextContent, "US English Male", {
+                        rate: 0.9,
+                        pitch: 1,
+                        volume: 1,
+                        onstart: () => updateTTSButtons('playing'),
+                        onend: () => updateTTSButtons('stopped'),
+                        onerror: () => {
+                            ttsStatus.textContent = 'Error occurred';
+                            updateTTSButtons('stopped');
+                        }
+                    });
                 }
-                
-                sermonContentEl.classList.remove('hidden');
-                loadingEl.classList.add('hidden');
+            });
+
+            ttsPauseBtn.addEventListener('click', () => {
+                responsiveVoice.pause();
+                updateTTSButtons('paused');
+            });
+
+            ttsStopBtn.addEventListener('click', () => {
+                responsiveVoice.cancel();
+                updateTTSButtons('stopped');
+            });
+        }
+
+        initializeTTS();
+
+        const loadingEl = document.getElementById('loading-sermon');
+        const sermonContentEl = document.getElementById('sermon-content');
+        const archiveGridEl = document.getElementById('archive-grid');
+        const sermonTopicEl = document.getElementById('sermon-topic');
+        
+        let allSermons = [];
+
+        function displaySermon(sermon) {
+            const titleEl = document.getElementById('sermon-title');
+            const textEl = document.getElementById('sermon-text');
+            const audioPlayerContainer = document.getElementById('audio-player-container');
+            const audioPlayer = document.getElementById('sermon-audio-player');
+
+            titleEl.textContent = sermon.title;
+            sermonTopicEl.textContent = sermon.topic;
+            textEl.innerHTML = sermon.text.split('\n\n').map(p => `<p>${p}</p>`).join('');
+            
+            sermonTextContent = sermon.title + '. ' + sermon.text.replace(/\n\n/g, ' ');
+            
+            if (typeof responsiveVoice !== 'undefined' && responsiveVoice.isPlaying()) {
+                responsiveVoice.cancel();
+                updateTTSButtons('stopped');
             }
-
-            function createArchiveCard(sermon) {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer';
-                
-                const date = new Date(sermon.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                const snippet = sermon.text.substring(0, 100) + '...';
-
-                card.innerHTML = `
-                    <p class="text-sm text-gray-500 mb-2">${date}</p>
-                    <h4 class="text-xl font-bold text-primary-blue mb-3">${sermon.title}</h4>
-                    <p class="text-gray-600 font-sans">${snippet}</p>
-                `;
-
-                card.addEventListener('click', () => {
-                    displaySermon(sermon);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
-
-                return card;
+            
+            if (sermon.audioData) {
+                audioPlayer.src = `data:audio/mpeg;base64,${sermon.audioData}`;
+                audioPlayerContainer.classList.remove('hidden');
+            } else {
+                audioPlayerContainer.classList.add('hidden');
             }
+            
+            sermonContentEl.classList.remove('hidden');
+            loadingEl.classList.add('hidden');
+        }
 
+        function createArchiveCard(sermon) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer';
+            
+            const date = new Date(sermon.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const snippet = sermon.text.substring(0, 100) + '...';
+
+            card.innerHTML = `
+                <p class="text-sm text-gray-500 mb-2">${date}</p>
+                <h4 class="text-xl font-bold text-primary-blue mb-3">${sermon.title}</h4>
+                <p class="text-gray-600 font-sans">${snippet}</p>
+            `;
+
+            card.addEventListener('click', () => {
+                displaySermon(sermon);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            return card;
+        }
+
+        async function loadSermons() {
             try {
+                console.log('Fetching sermons from /api/sermon');
                 const response = await fetch('/api/sermon');
-                if (!response.ok) throw new Error('Failed to fetch sermon archive');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
                 
                 allSermons = await response.json();
+                console.log('Sermons loaded:', allSermons.length);
                 
                 if (allSermons.length > 0) {
                     displaySermon(allSermons[0]);
@@ -286,14 +280,16 @@
                         archiveGridEl.innerHTML = '<p class="text-center text-gray-500 md:col-span-2">No older sermons in the archive yet.</p>'
                     }
                 } else {
-                    loadingEl.innerHTML = '<p class="text-gray-600">The first sermon is being generated. This may take a moment. Please refresh the page in a minute or two.</p>';
+                    loadingEl.innerHTML = '<p class="text-gray-600">The first sermon is being generated. Please refresh the page in a moment.</p>';
                 }
 
             } catch (error) {
-                console.error('Error fetching sermon archive:', error);
-                loadingEl.innerHTML = '<p class="text-red-600">Could not load the sermon archive. Please try again later.</p>';
+                console.error('Error loading sermons:', error);
+                loadingEl.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
             }
-        });
+        }
+
+        loadSermons();
     </script>
 </body>
 </html>
