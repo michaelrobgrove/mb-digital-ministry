@@ -53,26 +53,28 @@
     </div>
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <article id="devotional-content" class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-12 prose max-w-none">
-            <div class="text-center font-sans">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-blue mb-4"></div>
-                <p class="text-gray-500 text-lg">Loading today's devotional...</p>
+        <article class="bg-white rounded-xl shadow-lg p-8 md:p-12 mb-8">
+            <!-- Text-to-Speech Controls (at top, hidden until loaded) -->
+            <div id="tts-controls" class="hidden mb-8 flex flex-wrap gap-4 items-center justify-center pb-6 border-b">
+                <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
+                    <i class="fas fa-play"></i> Listen to Devotional
+                </button>
+                <button id="tts-pause-btn" class="hidden bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center gap-2">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button id="tts-stop-btn" class="hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+                <div id="tts-status" class="text-gray-600 font-sans text-sm"></div>
+            </div>
+
+            <div id="devotional-content" class="prose max-w-none">
+                <div class="text-center font-sans">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-blue mb-4"></div>
+                    <p class="text-gray-500 text-lg">Loading today's devotional...</p>
+                </div>
             </div>
         </article>
-
-        <!-- Text-to-Speech Controls (will be shown after content loads) -->
-        <div id="tts-controls" class="hidden mb-8 flex flex-wrap gap-4 items-center justify-center bg-white rounded-xl shadow-lg p-6">
-            <button id="tts-play-btn" class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors flex items-center gap-2">
-                <i class="fas fa-play"></i> Listen to Devotional
-            </button>
-            <button id="tts-pause-btn" class="hidden bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-pause"></i> Pause
-            </button>
-            <button id="tts-stop-btn" class="hidden bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-stop"></i> Stop
-            </button>
-            <div id="tts-status" class="text-gray-600 font-sans text-sm"></div>
-        </div>
     </main>
 
     <footer class="bg-gray-800 text-white py-12 font-sans">
@@ -109,6 +111,8 @@
         </div>
     </footer>
 
+    <!-- ResponsiveVoice for better quality -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script>
         // Mobile menu
@@ -122,11 +126,9 @@
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
 
-        // --- TEXT-TO-SPEECH FUNCTIONALITY ---
-        let speechSynthesis = window.speechSynthesis;
-        let currentUtterance = null;
-        let isPaused = false;
+        // --- TEXT-TO-SPEECH WITH RESPONSIVEVOICE ---
         let devotionalTextContent = '';
+        let isPlaying = false;
 
         const ttsControls = document.getElementById('tts-controls');
         const ttsPlayBtn = document.getElementById('tts-play-btn');
@@ -156,72 +158,84 @@
         }
 
         ttsPlayBtn.addEventListener('click', () => {
-            if (isPaused && currentUtterance) {
-                speechSynthesis.resume();
-                isPaused = false;
+            if (responsiveVoice.isPlaying()) {
+                responsiveVoice.resume();
                 updateTTSButtons('playing');
             } else {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                }
-                
-                currentUtterance = new SpeechSynthesisUtterance(devotionalTextContent);
-                
-                // Get available voices and prefer a natural-sounding one
-                const voices = speechSynthesis.getVoices();
-                const preferredVoice = voices.find(voice => 
-                    voice.name.includes('Natural') || 
-                    voice.name.includes('Premium') ||
-                    voice.name.includes('Google') ||
-                    voice.name.includes('Microsoft')
-                ) || voices[0];
-                
-                if (preferredVoice) {
-                    currentUtterance.voice = preferredVoice;
-                }
-                
-                currentUtterance.rate = 0.9;
-                currentUtterance.pitch = 1.0;
-                currentUtterance.volume = 1.0;
-                
-                currentUtterance.onend = () => {
-                    updateTTSButtons('stopped');
-                    isPaused = false;
-                };
-                
-                currentUtterance.onerror = (event) => {
-                    console.error('Speech synthesis error:', event);
-                    ttsStatus.textContent = 'Error occurred';
-                    updateTTSButtons('stopped');
-                };
-                
-                speechSynthesis.speak(currentUtterance);
-                updateTTSButtons('playing');
+                responsiveVoice.speak(devotionalTextContent, "US English Male", {
+                    rate: 0.9,
+                    pitch: 1,
+                    volume: 1,
+                    onstart: () => {
+                        isPlaying = true;
+                        updateTTSButtons('playing');
+                    },
+                    onend: () => {
+                        isPlaying = false;
+                        updateTTSButtons('stopped');
+                    },
+                    onerror: () => {
+                        ttsStatus.textContent = 'Error occurred';
+                        updateTTSButtons('stopped');
+                    }
+                });
             }
         });
 
         ttsPauseBtn.addEventListener('click', () => {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.pause();
-                isPaused = true;
-                updateTTSButtons('paused');
-            }
+            responsiveVoice.pause();
+            updateTTSButtons('paused');
         });
 
         ttsStopBtn.addEventListener('click', () => {
-            speechSynthesis.cancel();
-            isPaused = false;
+            responsiveVoice.cancel();
+            isPlaying = false;
             updateTTSButtons('stopped');
         });
 
-        // Load voices when available
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => {
-                speechSynthesis.getVoices();
-            };
-        }
+        // --- LOAD DEVOTIONAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const devotionalContent = document.getElementById('devotional-content');
+            if (!devotionalContent) return;
+
+            const converter = new showdown.Converter();
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+
+            const devotionalUrl = `/devotionals/${dateString}.txt`;
+
+            fetch(devotionalUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Devotional for today not found.');
+                    }
+                    return response.text();
+                })
+                .then(markdown => {
+                    const html = converter.makeHtml(markdown);
+                    devotionalContent.innerHTML = html;
+                    
+                    // Store plain text for TTS
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    devotionalTextContent = tempDiv.textContent || tempDiv.innerText || '';
+                    
+                    // Show TTS controls
+                    ttsControls.classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error(error);
+                    devotionalContent.innerHTML = `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome</h2>
+                        <p class="text-gray-600">A new devotional for today is coming soon. Please check back later.</p>
+                    `;
+                });
+        });
     </script>
-    <script src="/js/main.js"></script>
 
 </body>
 </html>

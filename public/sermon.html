@@ -130,6 +130,8 @@
         </div>
     </footer>
 
+    <!-- ResponsiveVoice for better quality -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=jQZ2zznP"></script>
     <script>
         // --- MOBILE MENU ---
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -138,11 +140,9 @@
         if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => { mobileMenu.classList.remove('hidden'); });
         if(mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', () => { mobileMenu.classList.add('hidden'); });
 
-        // --- TEXT-TO-SPEECH FUNCTIONALITY ---
-        let speechSynthesis = window.speechSynthesis;
-        let currentUtterance = null;
-        let isPaused = false;
+        // --- TEXT-TO-SPEECH WITH RESPONSIVEVOICE ---
         let sermonTextContent = '';
+        let isPlaying = false;
 
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
@@ -171,70 +171,40 @@
         }
 
         ttsPlayBtn.addEventListener('click', () => {
-            if (isPaused && currentUtterance) {
-                speechSynthesis.resume();
-                isPaused = false;
+            if (responsiveVoice.isPlaying()) {
+                responsiveVoice.resume();
                 updateTTSButtons('playing');
             } else {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                }
-                
-                currentUtterance = new SpeechSynthesisUtterance(sermonTextContent);
-                
-                // Get available voices and prefer a natural-sounding one
-                const voices = speechSynthesis.getVoices();
-                const preferredVoice = voices.find(voice => 
-                    voice.name.includes('Natural') || 
-                    voice.name.includes('Premium') ||
-                    voice.name.includes('Google') ||
-                    voice.name.includes('Microsoft')
-                ) || voices[0];
-                
-                if (preferredVoice) {
-                    currentUtterance.voice = preferredVoice;
-                }
-                
-                currentUtterance.rate = 0.9; // Slightly slower for better comprehension
-                currentUtterance.pitch = 1.0;
-                currentUtterance.volume = 1.0;
-                
-                currentUtterance.onend = () => {
-                    updateTTSButtons('stopped');
-                    isPaused = false;
-                };
-                
-                currentUtterance.onerror = (event) => {
-                    console.error('Speech synthesis error:', event);
-                    ttsStatus.textContent = 'Error occurred';
-                    updateTTSButtons('stopped');
-                };
-                
-                speechSynthesis.speak(currentUtterance);
-                updateTTSButtons('playing');
+                responsiveVoice.speak(sermonTextContent, "US English Male", {
+                    rate: 0.9,
+                    pitch: 1,
+                    volume: 1,
+                    onstart: () => {
+                        isPlaying = true;
+                        updateTTSButtons('playing');
+                    },
+                    onend: () => {
+                        isPlaying = false;
+                        updateTTSButtons('stopped');
+                    },
+                    onerror: () => {
+                        ttsStatus.textContent = 'Error occurred';
+                        updateTTSButtons('stopped');
+                    }
+                });
             }
         });
 
         ttsPauseBtn.addEventListener('click', () => {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.pause();
-                isPaused = true;
-                updateTTSButtons('paused');
-            }
+            responsiveVoice.pause();
+            updateTTSButtons('paused');
         });
 
         ttsStopBtn.addEventListener('click', () => {
-            speechSynthesis.cancel();
-            isPaused = false;
+            responsiveVoice.cancel();
+            isPlaying = false;
             updateTTSButtons('stopped');
         });
-
-        // Load voices when available
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => {
-                speechSynthesis.getVoices();
-            };
-        }
 
         // --- SERMON ARCHIVE LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
@@ -259,8 +229,8 @@
                 sermonTextContent = sermon.title + '. ' + sermon.text.replace(/\n\n/g, ' ');
                 
                 // Stop any ongoing speech when switching sermons
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
+                if (responsiveVoice.isPlaying()) {
+                    responsiveVoice.cancel();
                     updateTTSButtons('stopped');
                 }
                 
