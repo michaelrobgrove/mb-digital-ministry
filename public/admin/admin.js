@@ -1,6 +1,6 @@
 /**
  * File Path: /public/admin/admin.js
- * FIXED: Corrected login endpoint and initial auth check
+ * FIXED: Corrected API endpoints and error handling
  */
 document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const response = await fetch('/api/admin' + path, opts);
         if (response.status === 401) {
-            // If unauthorized, always log out.
             logout();
             throw new Error('Unauthorized');
         }
@@ -29,8 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const errData = await response.json().catch(() => ({ error: 'An unknown API error occurred.' }));
             throw new Error(errData.error || 'API Error');
         }
-        // Handle no-content responses for DELETE requests
-        if (response.status === 204) return;
+        if (response.status === 204) return null;
         return response.json();
     }
 
@@ -57,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         try {
-            // FIXED: Use the correct login endpoint
             const response = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -88,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sermonsList.innerHTML = 'Loading sermons...';
         try {
             const sermons = await api('/sermons');
-            if (sermons.length === 0) {
+            if (!sermons || sermons.length === 0) {
                  sermonsList.innerHTML = '<p>No sermons found in the archive.</p>';
                  return;
             }
@@ -100,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `).join('');
         } catch (e) {
-            // Errors are handled by the api helper, which will trigger logout on 401
-            sermonsList.innerHTML = '<p class="error">Failed to load sermons</p>';
+            console.error('Error loading sermons:', e);
+            sermonsList.innerHTML = '<p class="error">Failed to load sermons: ' + e.message + '</p>';
         }
     }
     
@@ -142,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prayersList.innerHTML = 'Loading prayer logs...';
         try {
             const prayers = await api('/prayers');
-            if (prayers.length === 0) {
+            if (!prayers || prayers.length === 0) {
                 prayersList.innerHTML = '<p>No prayer requests have been logged.</p>';
                 return;
             }
@@ -155,8 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `).join('');
         } catch (e) {
-            // Errors are handled by the api helper
-            prayersList.innerHTML = '<p class="error">Failed to load prayers</p>';
+            console.error('Error loading prayers:', e);
+            prayersList.innerHTML = '<p class="error">Failed to load prayers: ' + e.message + '</p>';
         }
     }
 
@@ -180,13 +177,14 @@ document.addEventListener('DOMContentLoaded', () => {
             showLogin();
             return;
         }
-        // Verify token by trying to load data. If it fails with 401, the API helper will force a logout.
         try {
-            await api('/sermons'); // A lightweight check
+            // Verify token is valid by making a test API call
+            await api('/sermons');
             showAdmin();
         } catch (e) {
-            // The api() helper already called logout(), so the login screen is now visible.
-            console.error("Initial auth check failed, showing login.");
+            console.error("Initial auth check failed:", e);
+            // Token is invalid, show login
+            showLogin();
         }
     }
 
