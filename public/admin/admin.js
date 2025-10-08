@@ -1,6 +1,6 @@
 /**
  * File Path: /public/admin/admin.js
- * FIXED: Corrected API endpoints and error handling
+ * Admin panel with improved error handling
  */
 document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Using a specific key for this site
     const TOKEN_KEY = 'mb_admin_token';
     let token = localStorage.getItem(TOKEN_KEY);
 
@@ -19,16 +18,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (token) {
             opts.headers['Authorization'] = 'Bearer ' + token;
         }
+        
+        console.log('API Request:', opts.method || 'GET', '/api/admin' + path);
+        
         const response = await fetch('/api/admin' + path, opts);
+        
+        console.log('API Response:', response.status, response.statusText);
+        
         if (response.status === 401) {
             logout();
             throw new Error('Unauthorized');
         }
+        
+        // Handle 204 No Content (successful delete)
+        if (response.status === 204) {
+            console.log('Delete successful (204 No Content)');
+            return null;
+        }
+        
+        // Try to parse JSON response
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response received:', text.substring(0, 200));
+            throw new Error('Server returned non-JSON response');
+        }
+        
         if (!response.ok) {
             const errData = await response.json().catch(() => ({ error: 'An unknown API error occurred.' }));
             throw new Error(errData.error || 'API Error');
         }
-        if (response.status === 204) return null;
+        
         return response.json();
     }
 
@@ -103,13 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     generateSermonBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to generate a new sermon? This can take up to a minute and will replace this week\'s scheduled sermon.')) return;
+        if (!confirm('Are you sure you want to generate a new sermon? This can take up to a minute.')) return;
         try {
             generateSermonBtn.disabled = true;
             generateSermonBtn.textContent = 'Generating...';
             await api('/sermons/generate', { method: 'POST' });
-            alert('New sermon generation complete. The archive will update.');
-            loadSermons();
+            alert('New sermon generation started. It will appear in the list shortly.');
+            setTimeout(loadSermons, 3000); // Reload after 3 seconds
         } catch (e) {
             alert('Failed to trigger generation: ' + e.message);
         } finally {
@@ -123,9 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this sermon?\nID: ${id}`)) {
                 try {
-                    await api(`/sermons/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    console.log('Attempting to delete sermon:', id);
+                    const result = await api(`/sermons/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    console.log('Delete result:', result);
+                    alert('Sermon deleted successfully');
                     loadSermons();
                 } catch (err) {
+                    console.error('Delete error:', err);
                     alert('Delete failed: ' + err.message);
                 }
             }
@@ -162,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this prayer log?\nID: ${id}`)) {
                 try {
-                    await api(`/prayers/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    await api(`/prayers/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     loadPrayers();
                 } catch (err) {
                     alert('Delete failed: ' + err.message);
@@ -178,12 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            // Verify token is valid by making a test API call
             await api('/sermons');
             showAdmin();
         } catch (e) {
             console.error("Initial auth check failed:", e);
-            // Token is invalid, show login
             showLogin();
         }
     }
