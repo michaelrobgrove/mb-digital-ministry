@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this sermon?\nID: ${id}`)) {
                 try {
-                    await api(`/sermons/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    await api(`/sermons/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     loadSermons();
                 } catch (err) {
                     alert('Delete failed: ' + err.message);
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             if (confirm(`Are you sure you want to delete this prayer log?\nID: ${id}`)) {
                 try {
-                    await api(`/prayers/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    await api(`/prayers/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     loadPrayers();
                 } catch (err) {
                     alert('Delete failed: ' + err.message);
