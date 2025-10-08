@@ -82,11 +82,21 @@ async function deleteSermon(id, env) {
 }
 
 async function forceGenerateSermon(context) { 
-    const sermon = await generateAndCacheSermon(context.env); 
+    // Generate with a unique timestamp-based key instead of Sunday-based
+    const sermon = await generateAndCacheSermonUnique(context.env); 
     return new Response(JSON.stringify(sermon), { 
         status: 201, 
         headers: { 'Content-Type': 'application/json' } 
     }); 
+}
+
+async function generateAndCacheSermonUnique(env) { 
+    const now = new Date();
+    const cacheKey = `sermon:${now.toISOString()}`; // Unique timestamp-based key
+    const newSermon = await generateSermonAndAudio(env.GEMINI_API_KEY, env.ELEVENLABS_API_KEY); 
+    newSermon.id = cacheKey; 
+    await env.MBSERMON.put(cacheKey, JSON.stringify(newSermon), { expirationTtl: 5616000 }); 
+    return newSermon; 
 }
 
 async function listPrayers(env) { 
