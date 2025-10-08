@@ -28,8 +28,9 @@ export async function onRequest(context) {
 
     try {
         console.log('Starting sermon generation...');
-        waitUntil(generateAndStoreSermon(env));
-        return new Response(JSON.stringify({ success: true, message: 'Sermon generation started' }), {
+        // Don't use waitUntil - execute synchronously
+        await generateAndStoreSermon(env);
+        return new Response(JSON.stringify({ success: true, message: 'Sermon generated successfully' }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -56,27 +57,39 @@ async function generateAndStoreSermon(env) {
     ];
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
     
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${env.GEMINI_API_KEY}`;
     const prompt = `You are an AI assistant, Pastor AIden, creating a weekly sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references. Generate a full, expositional sermon of approximately 2,500 words based on ${selectedTheme}. The sermon should be structured with a clear introduction, 3-4 main points with sub-points, and a concluding call to action or reflection. Your response MUST be a JSON object with the following schema: {"topic": "A short, engaging topic for the sermon (e.g., 'The Power of Grace')","title": "A formal title for the sermon (e.g., 'Unwavering Hope in Romans 8')","text": "The full text of the sermon, formatted with newline characters (\\n\\n) between paragraphs."}`;
     
-    const response = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.7,
-                response_mime_type: "application/json",
-            },
-        }),
-    });
-
-    if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
-    const data = await response.json();
-    let sermonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!sermonText) throw new Error('No valid sermon text returned from Gemini.');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
     
     try {
+        const response = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 4096,
+                    response_mime_type: "application/json",
+                },
+            }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Gemini API Error Response:', errorText);
+            throw new Error(`Gemini API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        let sermonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!sermonText) throw new Error('No valid sermon text returned from Gemini.');
+        
         sermonText = sermonText.replace(/^```json\n/, '').replace(/\n```$/, '');
         const sermonData = JSON.parse(sermonText);
         
@@ -95,7 +108,13 @@ async function generateAndStoreSermon(env) {
         });
         console.log("Sermon stored with ID:", sermonId);
     } catch (e) {
-        console.error("Failed to parse or store sermon:", e);
-        throw new Error("Malformed JSON received from AI model.");
+        if (e.name === 'AbortError') {
+            console.error("Sermon generation timed out");
+            throw new Error("Sermon generation timed out. Please try again.");
+        }
+        console.error("Failed to generate or store sermon:", e);
+        throw e;
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
