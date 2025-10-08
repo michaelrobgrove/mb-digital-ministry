@@ -1,6 +1,6 @@
 /**
  * File Path: /public/admin/admin.js
- * CORRECTED: Improved authentication flow to handle invalid tokens on page load.
+ * FIXED: Corrected login endpoint and initial auth check
  */
 document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
@@ -57,10 +57,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         try {
-            const data = await api('/login', {
+            // FIXED: Use the correct login endpoint
+            const response = await fetch('/api/admin/login', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
+            
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({ error: 'Login failed' }));
+                throw new Error(errData.error || 'Invalid credentials');
+            }
+            
+            const data = await response.json();
             token = data.token;
             localStorage.setItem(TOKEN_KEY, token);
             showAdmin();
@@ -92,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
         } catch (e) {
             // Errors are handled by the api helper, which will trigger logout on 401
+            sermonsList.innerHTML = '<p class="error">Failed to load sermons</p>';
         }
     }
     
@@ -146,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
         } catch (e) {
             // Errors are handled by the api helper
+            prayersList.innerHTML = '<p class="error">Failed to load prayers</p>';
         }
     }
 
@@ -171,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Verify token by trying to load data. If it fails with 401, the API helper will force a logout.
         try {
-            await listSermons(); // A lightweight check
+            await api('/sermons'); // A lightweight check
             showAdmin();
         } catch (e) {
             // The api() helper already called logout(), so the login screen is now visible.
@@ -181,4 +192,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initialize();
 });
-
