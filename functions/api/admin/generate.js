@@ -146,7 +146,7 @@ async function generateAndStoreSermon(env) {
     
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
     
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-exp:generateContent?key=${env.GEMINI_API_KEY}`;
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
     const prompt = `You are Pastor AIden, creating a unique weekly expositional sermon for a Baptist resource website. Your theology must strictly align with Southern Baptist and Independent Baptist beliefs, using the King James Version of the Bible for all scripture references.
 
 Generate a complete, original sermon of approximately 2,500-3,000 words based on:
@@ -232,3 +232,4 @@ Your response MUST be a JSON object with this exact schema:
     }
 
 }
+
