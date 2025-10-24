@@ -144,7 +144,7 @@ async function generateAndStoreSermon(env) {
         
         // New Testament - General Epistles
         { book: "Hebrews", passage: "Hebrews 11:1-40", theme: "The Hall of Faith" },
-Gallery       { book: "Hebrews", passage: "Hebrews 12:1-2", theme: "Running the Race with Endurance" },
+        { book: "Hebrews", passage: "Hebrews 12:1-2", theme: "Running the Race with Endurance" },
         { book: "James", passage: "James 1:2-8", theme: "Trials and Wisdom" },
         { book: "James", passage: "James 2:14-26", theme: "Faith and Works" },
         { book: "1 Peter", passage: "1 Peter 2:9-12", theme: "A Chosen People" },
@@ -152,8 +152,8 @@ Gallery       { book: "Hebrews", passage: "Hebrews 12:1-2", theme: "Running t
         { book: "2 Peter", passage: "2 Peter 1:3-11", theme: "Growing in Godliness" },
         { book: "1 John", passage: "1 John 4:7-21", theme: "God is Love" },
         { book: "1 John", passage: "1 John 1:5-10", theme: "Walking in the Light" },
-        { book: "Jude", passage: "Jude 1:20-25", theme: "Building Up Your Faith" },
-G       
+  .     { book: "Jude", passage: "Jude 1:20-25", theme: "Building Up Your Faith" },
+        
         // New Testament - Revelation
         { book: "Revelation", passage: "Revelation 1:4-8", theme: "The Alpha and Omega" },
         { book: "Revelation", passage: "Revelation 21:1-8", theme: "The New Heaven and New Earth" }
@@ -244,4 +244,5 @@ Your response MUST be a JSON object with this exact schema:
         // You could also write this error to another KV store for "failed jobs"
     }
 }
+
 
