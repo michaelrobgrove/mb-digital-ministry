@@ -1,12 +1,3 @@
-/**
- * File Path: /functions/api/admin/generate.js
- * Handles: POST /api/admin/generate - Triggers sermon generation
- *
- * UPDATE: This file is modified to use `waitUntil` to handle
- * the long-running sermon generation task. This prevents the
- * request from timing out.
- */
-
 // --- Authentication Functions (Unchanged) ---
 const textEncoder = new TextEncoder();
 async function getHmacKey(secret) { return await crypto.subtle.importKey('raw',textEncoder.encode(secret),{ name: 'HMAC', hash: 'SHA-256' },false,['sign', 'verify']); }
@@ -152,7 +143,7 @@ async function generateAndStoreSermon(env) {
         { book: "2 Peter", passage: "2 Peter 1:3-11", theme: "Growing in Godliness" },
         { book: "1 John", passage: "1 John 4:7-21", theme: "God is Love" },
         { book: "1 John", passage: "1 John 1:5-10", theme: "Walking in the Light" },
-  .     { book: "Jude", passage: "Jude 1:20-25", theme: "Building Up Your Faith" },
+        { book: "Jude", passage: "Jude 1:20-25", theme: "Building Up Your Faith" },
         
         // New Testament - Revelation
         { book: "Revelation", passage: "Revelation 1:4-8", theme: "The Alpha and Omega" },
@@ -244,5 +235,3 @@ Your response MUST be a JSON object with this exact schema:
         // You could also write this error to another KV store for "failed jobs"
     }
 }
-
-
