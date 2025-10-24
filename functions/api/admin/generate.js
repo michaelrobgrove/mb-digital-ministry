@@ -103,7 +103,7 @@ async function generateAndStoreSermon(env) {
         { book: "Malachi", passage: "Malachi 3:8-10", theme: "Tithing and God's Blessings" },
         
         // New Testament - Gospels
-      D  { book: "Matthew", passage: "Matthew 5:1-12", theme: "The Beatitudes" },
+        { book: "Matthew", passage: "Matthew 5:1-12", theme: "The Beatitudes" },
         { book: "Matthew", passage: "Matthew 28:18-20", theme: "The Great Commission" },
         { book: "Mark", passage: "Mark 10:45", theme: "Jesus Came to Serve" },
         { book: "Luke", passage: "Luke 15:11-32", theme: "The Prodigal Son" },
@@ -126,37 +126,37 @@ async function generateAndStoreSermon(env) {
         { book: "Romans", passage: "Romans 12:1-2", theme: "Living Sacrifices" },
         { book: "1 Corinthians", passage: "1 Corinthians 13", theme: "The Excellence of Love" },
         { book: "1 Corinthians", passage: "1 Corinthians 15:1-8", theme: "The Gospel and the Resurrection" },
-e       { book: "2 Corinthians", passage: "2 Corinthians 5:17-21", theme: "New Creation and Reconciliation" },
+        { book: "2 Corinthians", passage: "2 Corinthians 5:17-21", theme: "New Creation and Reconciliation" },
         { book: "Galatians", passage: "Galatians 5:22-23", theme: "The Fruit of the Spirit" },
         { book: "Ephesians", passage: "Ephesians 2:8-10", theme: "Saved by Grace" },
         { book: "Ephesians", passage: "Ephesians 4:1-16", theme: "Unity in the Body of Christ" },
-fs     { book: "Ephesians", passage: "Ephesians 6:10-18", theme: "The Armor of God" },
+        { book: "Ephesians", passage: "Ephesians 6:10-18", theme: "The Armor of God" },
         { book: "Philippians", passage: "Philippians 2:1-11", theme: "The Mind of Christ" },
         { book: "Philippians", passage: "Philippians 4:4-13", theme: "Rejoicing and Contentment in Christ" },
         { book: "Colossians", passage: "Colossians 3:1-17", theme: "Setting Our Minds on Things Above" },
-G       { book: "1 Thessalonians", passage: "1 Thessalonians 4:13-18", theme: "The Rapture and Blessed Hope" },
+        { book: "1 Thessalonians", passage: "1 Thessalonians 4:13-18", theme: "The Rapture and Blessed Hope" },
         { book: "2 Thessalonians", passage: "2 Thessalonians 3:6-13", theme: "Working and Not Being Idle" },
         { book: "1 Timothy", passage: "1 Timothy 3:1-13", theme: "Qualifications for Church Leadership" },
         { book: "2 Timothy", passage: "2 Timothy 2:15", theme: "Rightly Dividing the Word" },
-I       { book: "2 Timothy", passage: "2 Timothy 3:16-17", theme: "The Inspiration of Scripture" },
+        { book: "2 Timothy", passage: "2 Timothy 3:16-17", theme: "The Inspiration of Scripture" },
         { book: "Titus", passage: "Titus 2:11-14", theme: "The Grace That Brings Salvation" },
         { book: "Philemon", passage: "Philemon 1:8-21", theme: "Forgiveness and Reconciliation" },
-A       
+        
         // New Testament - General Epistles
         { book: "Hebrews", passage: "Hebrews 11:1-40", theme: "The Hall of Faith" },
-        { book: "Hebrews", passage: "Hebrews 12:1-2", theme: "Running the Race with Endurance" },
+Gallery       { book: "Hebrews", passage: "Hebrews 12:1-2", theme: "Running the Race with Endurance" },
         { book: "James", passage: "James 1:2-8", theme: "Trials and Wisdom" },
-  s     { book: "James", passage: "James 2:14-26", theme: "Faith and Works" },
+        { book: "James", passage: "James 2:14-26", theme: "Faith and Works" },
         { book: "1 Peter", passage: "1 Peter 2:9-12", theme: "A Chosen People" },
         { book: "1 Peter", passage: "1 Peter 5:6-11", theme: "Casting Your Cares on God" },
         { book: "2 Peter", passage: "2 Peter 1:3-11", theme: "Growing in Godliness" },
         { book: "1 John", passage: "1 John 4:7-21", theme: "God is Love" },
-s       { book: "1 John", passage: "1 John 1:5-10", theme: "Walking in the Light" },
+        { book: "1 John", passage: "1 John 1:5-10", theme: "Walking in the Light" },
         { book: "Jude", passage: "Jude 1:20-25", theme: "Building Up Your Faith" },
-        
+G       
         // New Testament - Revelation
         { book: "Revelation", passage: "Revelation 1:4-8", theme: "The Alpha and Omega" },
-e       { book: "Revelation", passage: "Revelation 21:1-8", theme: "The New Heaven and New Earth" }
+        { book: "Revelation", passage: "Revelation 21:1-8", theme: "The New Heaven and New Earth" }
     ];
     
     const selectedTheme = sermonThemes[Math.floor(Math.random() * sermonThemes.length)];
@@ -244,3 +244,4 @@ Your response MUST be a JSON object with this exact schema:
         // You could also write this error to another KV store for "failed jobs"
     }
 }
+
